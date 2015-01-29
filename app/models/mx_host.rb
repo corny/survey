@@ -20,6 +20,9 @@ class MxHost < ActiveRecord::Base
       # hopefully a race condition
       retry
     end
+  rescue PG::UniqueViolation
+    # hopefully a race condition
+    retry
   end
 
 end

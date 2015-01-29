@@ -1,5 +1,7 @@
 class Domain < ActiveRecord::Base
 
+  after_create :enqueue_resolve
+
   # create mx_hosts by hostname
   def create_mx_hosts
     mx_hosts = []
@@ -13,6 +15,10 @@ class Domain < ActiveRecord::Base
       end
     end
     self.update_attributes! mx_hosts: mx_hosts
+  end
+
+  def enqueue_resolve
+    ResolverJob.perform_later(self, 'create_mx_hosts')
   end
 
 end
