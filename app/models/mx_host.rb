@@ -1,10 +1,17 @@
 class MxHost < ActiveRecord::Base
 
+  Known = Set.new
+
+  def self.known
+    @known ||= Set.new MxHost.all.map(&:hostname)
+  end
+
   def self.create_by_hostname(hostname)
     hostname = hostname.downcase
 
-    # already exists?
-    return true if where(hostname: hostname).any?
+    # skip if already exists
+    return if known.include?(hostname)
+    known << hostname
 
     addresses = Resolv::DNS.open do |dns|
       dns.getaddresses(hostname)
@@ -13,16 +20,10 @@ class MxHost < ActiveRecord::Base
     begin
       transaction do
         addresses.each do |record|
-          find_or_initialize_by(hostname: hostname, address: record.to_s)
+          find_or_create_by(hostname: hostname, address: record.to_s)
         end
       end
-    rescue PG::UniqueViolation
-      # hopefully a race condition
-      retry
     end
-  rescue PG::UniqueViolation
-    # hopefully a race condition
-    retry
   end
 
 end
