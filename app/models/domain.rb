@@ -2,6 +2,8 @@ class Domain < ActiveRecord::Base
 
   after_create :enqueue_resolve
 
+  scope :without_mx, ->{ where 'ARRAY_LENGTH(mx_hosts,1) IS NULL' }
+
   # create mx_hosts by hostname
   def create_mx_hosts
     mx_hosts = []
@@ -19,6 +21,14 @@ class Domain < ActiveRecord::Base
 
   def enqueue_resolve
     ResolverJob.perform_later(self, 'create_mx_hosts')
+  end
+
+  def self.stats
+    {
+      domains_total:      count,
+      domains_without_mx: without_mx.count,
+      mx_total:           MxHost.count,
+    }
   end
 
 end

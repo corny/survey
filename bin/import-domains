@@ -2,5 +2,6 @@
 require_relative '../config/environment'
 
 STDIN.each_line do |line|
-  Domain.find_or_create_by(name: line.strip.downcase)
+  d = Domain.find_or_create_by(name: line.split("/").first.downcase)
+  raise "unable to import #{line}#{d.errors.inspect}" if d.new_record?
 end
