@@ -11,10 +11,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150128234726) do
+ActiveRecord::Schema.define(version: 20150201222830) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "certificates", force: :cascade do |t|
+    t.binary   "sha1_fingerprint",              null: false
+    t.boolean  "is_valid",                      null: false
+    t.boolean  "is_self_signed",                null: false
+    t.string   "validation_error"
+    t.text     "names",            default: [], null: false, array: true
+    t.datetime "first_seen_at",                 null: false
+  end
 
   create_table "domains", force: :cascade do |t|
     t.string "name",                  null: false
@@ -25,10 +34,20 @@ ActiveRecord::Schema.define(version: 20150128234726) do
   add_index "domains", ["name"], name: "index_domains_on_name", unique: true, using: :btree
 
   create_table "mx_hosts", force: :cascade do |t|
-    t.string "hostname", null: false
-    t.inet   "address",  null: false
+    t.string  "hostname",       null: false
+    t.inet    "address",        null: false
+    t.boolean "starttls"
+    t.integer "certificate_id"
   end
 
   add_index "mx_hosts", ["address", "hostname"], name: "index_mx_hosts_on_address_and_hostname", unique: true, using: :btree
+  add_index "mx_hosts", ["certificate_id"], name: "index_mx_hosts_on_certificate_id", using: :btree
 
+  create_table "raw_certificates", force: :cascade do |t|
+    t.binary "sha1_fingerprint", null: false
+    t.binary "raw",              null: false
+  end
+
+  add_foreign_key "certificates", "raw_certificates", column: "id"
+  add_foreign_key "mx_hosts", "certificates"
 end
