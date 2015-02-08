@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+require_relative '../config/environment'
+require 'importer'
+
+STDIN.each_line do |line|
+  json   = JSON.parse(line)
+  unless json['total'] # unless summary line
+    result = Importer.import json
+    puts result.host
+  end
+end

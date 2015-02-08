@@ -1,5 +1,7 @@
 class MxHost < ActiveRecord::Base
 
+  belongs_to :certificate, foreign_key: :certificate_id, class_name: 'RawCertificate'
+
   Known = Set.new
 
   def self.known
@@ -24,6 +26,11 @@ class MxHost < ActiveRecord::Base
         end
       end
     end
+  end
+
+  def valid_address?
+    addr = address.to_s
+    addr != "0.0.0.0" && addr !~ /^(::|f[de])/
   end
 
 end

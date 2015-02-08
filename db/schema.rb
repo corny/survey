@@ -17,13 +17,18 @@ ActiveRecord::Schema.define(version: 20150201222830) do
   enable_extension "plpgsql"
 
   create_table "certificates", force: :cascade do |t|
-    t.binary   "sha1_fingerprint",              null: false
-    t.boolean  "is_valid",                      null: false
-    t.boolean  "is_self_signed",                null: false
+    t.binary   "sha1_fingerprint",                        null: false
+    t.integer  "subject_id",       limit: 8,              null: false
+    t.integer  "issuer_id",        limit: 8,              null: false
+    t.boolean  "is_valid",                                null: false
+    t.boolean  "is_self_signed",                          null: false
     t.string   "validation_error"
-    t.text     "names",            default: [], null: false, array: true
-    t.datetime "first_seen_at",                 null: false
+    t.text     "names",                      default: [], null: false, array: true
+    t.datetime "first_seen_at",                           null: false
   end
+
+  add_index "certificates", ["issuer_id"], name: "index_certificates_on_issuer_id", using: :btree
+  add_index "certificates", ["subject_id"], name: "index_certificates_on_subject_id", using: :btree
 
   create_table "domains", force: :cascade do |t|
     t.string "name",                  null: false
@@ -37,6 +42,7 @@ ActiveRecord::Schema.define(version: 20150201222830) do
     t.string  "hostname",       null: false
     t.inet    "address",        null: false
     t.boolean "starttls"
+    t.boolean "cert_valid"
     t.integer "certificate_id"
   end
 
@@ -47,6 +53,8 @@ ActiveRecord::Schema.define(version: 20150201222830) do
     t.binary "sha1_fingerprint", null: false
     t.binary "raw",              null: false
   end
+
+  add_index "raw_certificates", ["sha1_fingerprint"], name: "index_raw_certificates_on_sha1_fingerprint", unique: true, using: :btree
 
   add_foreign_key "certificates", "raw_certificates", column: "id"
   add_foreign_key "mx_hosts", "certificates"
