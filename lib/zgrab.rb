@@ -1,5 +1,14 @@
 module Zgrab
 
+  CipherSuites = YAML.load_file(Rails.root.join "config/cipher_suites.yml")
+
+  TLSVersions = {
+    0x0300 => 'SSLv30',
+    0x0301 => 'TLSv10',
+    0x0302 => 'TLSv11',
+    0x0303 => 'TLSv12',
+  }
+
   class Result
     def initialize(data)
       @data = data
@@ -19,6 +28,18 @@ module Zgrab
 
     def log(type)
       @data['log'].find{|l| l['type'] == type }
+    end
+
+    def tls_version
+      TLSVersions[server_hello['version']]
+    end
+
+    def tls_cipher_suite
+      CipherSuites[server_hello['cipher_suite']]
+    end
+
+    def server_hello
+      fetch(log('tls_handshake'), 'data', 'server_hello') || {}
     end
 
     def server_certificates(*args)

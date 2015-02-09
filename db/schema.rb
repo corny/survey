@@ -17,14 +17,13 @@ ActiveRecord::Schema.define(version: 20150201222830) do
   enable_extension "plpgsql"
 
   create_table "certificates", force: :cascade do |t|
-    t.binary   "sha1_fingerprint",                        null: false
-    t.integer  "subject_id",       limit: 8,              null: false
-    t.integer  "issuer_id",        limit: 8,              null: false
-    t.boolean  "is_valid",                                null: false
-    t.boolean  "is_self_signed",                          null: false
+    t.binary   "sha1_fingerprint",           null: false
+    t.integer  "subject_id",       limit: 8, null: false
+    t.integer  "issuer_id",        limit: 8, null: false
+    t.boolean  "is_valid",                   null: false
+    t.boolean  "is_self_signed",             null: false
     t.string   "validation_error"
-    t.text     "names",                      default: [], null: false, array: true
-    t.datetime "first_seen_at",                           null: false
+    t.datetime "first_seen_at",              null: false
   end
 
   add_index "certificates", ["issuer_id"], name: "index_certificates_on_issuer_id", using: :btree
@@ -38,16 +37,8 @@ ActiveRecord::Schema.define(version: 20150201222830) do
   add_index "domains", ["mx_hosts"], name: "index_domains_on_mx_hosts", using: :btree
   add_index "domains", ["name"], name: "index_domains_on_name", unique: true, using: :btree
 
-  create_table "mx_hosts", force: :cascade do |t|
-    t.string  "hostname",       null: false
-    t.inet    "address",        null: false
-    t.boolean "starttls"
-    t.boolean "cert_valid"
-    t.integer "certificate_id"
-  end
-
-  add_index "mx_hosts", ["address", "hostname"], name: "index_mx_hosts_on_address_and_hostname", unique: true, using: :btree
-  add_index "mx_hosts", ["certificate_id"], name: "index_mx_hosts_on_certificate_id", using: :btree
+# Could not dump table "mx_hosts" because of following StandardError
+#   Unknown type 'tls_version' for column 'tls_version'
 
   create_table "raw_certificates", force: :cascade do |t|
     t.binary "sha1_fingerprint", null: false

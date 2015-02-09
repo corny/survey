@@ -8,6 +8,8 @@ describe Zgrab do
   context 'valid' do
     let(:fixture){ 'valid' }
     its(:starttls?){ should == true }
+    its(:tls_version){ should == 'TLSv12' }
+    its(:tls_cipher_suite){ should == 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256' }
     its(:names){ should == %w( mail.digineo.de digineo.de ) }
     its(:certificate_valid?){ should == true }
     its(:self_signed?){ should == false }
@@ -26,6 +28,8 @@ describe Zgrab do
 
   context 'no starttls' do
     let(:fixture){ 'no-starttls' }
+    its(:tls_version){ should == nil }
+    its(:tls_cipher_suite){ should == nil }
     its(:starttls?){ should == false }
     its(:certificate_valid?){ should == nil }
     its(:self_signed?){ should == nil }
