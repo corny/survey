@@ -10,8 +10,9 @@ gem 'rails', '~> 4.2.0'
 # https://bitbucket.org/ged/ruby-pg/issue/198/argumenterror-string-contains-null-byte
 gem 'pg', '~> 0.17.1'
 
-# Use SCSS for stylesheets
+gem 'haml-rails'
 gem 'sass-rails', '~> 5.0'
+
 # Use Uglifier as compressor for JavaScript assets
 gem 'uglifier', '>= 1.3.0'
 # Use CoffeeScript for .coffee assets and views
