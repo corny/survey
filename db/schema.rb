@@ -20,6 +20,8 @@ ActiveRecord::Schema.define(version: 20150128234726) do
     t.binary   "sha1_fingerprint",           null: false
     t.integer  "subject_id",       limit: 8, null: false
     t.integer  "issuer_id",        limit: 8, null: false
+    t.integer  "key_id",           limit: 8, null: false
+    t.integer  "key_size"
     t.boolean  "is_valid",                   null: false
     t.boolean  "is_self_signed",             null: false
     t.string   "validation_error"
@@ -27,6 +29,8 @@ ActiveRecord::Schema.define(version: 20150128234726) do
   end
 
   add_index "certificates", ["issuer_id"], name: "index_certificates_on_issuer_id", using: :btree
+  add_index "certificates", ["key_id"], name: "index_certificates_on_key_id", using: :btree
+  add_index "certificates", ["key_size"], name: "index_certificates_on_key_size", using: :btree
   add_index "certificates", ["subject_id"], name: "index_certificates_on_subject_id", using: :btree
 
   create_table "domains", force: :cascade do |t|

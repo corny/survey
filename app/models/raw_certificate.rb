@@ -1,5 +1,11 @@
 class RawCertificate < ActiveRecord::Base
 
+  delegate \
+    :public_key,
+    :subject,
+    :issuer,
+    to: :x509
+
   scope :fingerprint, ->(val) do
     where "sha1_fingerprint=E?", "\\\\x#{val}"
   end
@@ -18,8 +24,9 @@ class RawCertificate < ActiveRecord::Base
           sha1_fingerprint: sha1,
           issuer_id:        x509.issuer.hash,
           subject_id:       x509.subject.hash,
+          key_id:           x509.public_key.hash,
           is_valid:         false,
-          is_self_signed:   false,
+          is_self_signed:   x509.issuer == x509.subject,
           first_seen_at:    seen_at
       end
       cert
@@ -32,6 +39,23 @@ class RawCertificate < ActiveRecord::Base
 
   def x509
     @x509 ||= OpenSSL::X509::Certificate.new(raw)
+  end
+
+  def key_size
+    key = public_key
+    case key
+    when OpenSSL::PKey::RSA
+      key.n.num_bits
+    when OpenSSL::PKey::DSA
+      key.p.num_bits
+    when OpenSSL::PKey::EC
+      # don't know better
+      public_key.to_text.match(%r((\d+) bit))[1].to_i
+    end
+  end
+
+  def key_type
+    public_key.class.to_s.split("::").last
   end
 
 end
