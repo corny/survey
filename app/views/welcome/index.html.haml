@@ -25,7 +25,7 @@
 
 %h2 TLS Versions
 %dl.with-charts.with-charts
-  - MxHost.where("tls_version IS NOT NULL").select("tls_version, COUNT(*) AS count").group(:tls_version).order(:tls_version).each do |record|
+  - Stats.tls_versions.each do |record|
     %dt= record.tls_version
     %dd= record.count
 
@@ -34,3 +34,9 @@
   - MxHost.where("tls_cipher_suite IS NOT NULL").select("tls_cipher_suite, COUNT(*) AS count").group(:tls_cipher_suite).order(:tls_cipher_suite).each do |record|
     %dt= record.tls_cipher_suite
     %dd= record.count
+
+%h2 Top Issuers
+%table
+  %tr
+  %tbody
+    = render partial: 'subject', collection: Stats.issuers
