@@ -8,7 +8,7 @@
   %dd= MxHost.count
 
 %h2 STARTTLS
-%dl
+%dl.with-charts
   %dt supported
   %dd= MxHost.where(starttls: true).count
   %dt unsupported
@@ -17,20 +17,20 @@
   %dd= MxHost.where(starttls: nil).count
 
 %h2 Certificates
-%dl
+%dl.with-charts
   %dt valid
   %dd= MxHost.where(cert_valid: true).count
   %dt invalid
   %dd= MxHost.where(cert_valid: false).count
 
 %h2 TLS Versions
-%dl
+%dl.with-charts.with-charts
   - MxHost.where("tls_version IS NOT NULL").select("tls_version, COUNT(*) AS count").group(:tls_version).order(:tls_version).each do |record|
     %dt= record.tls_version
     %dd= record.count
 
 %h2 TLS Cipher Suites
-%dl
+%dl.with-charts
   - MxHost.where("tls_cipher_suite IS NOT NULL").select("tls_cipher_suite, COUNT(*) AS count").group(:tls_cipher_suite).order(:tls_cipher_suite).each do |record|
     %dt= record.tls_cipher_suite
     %dd= record.count
