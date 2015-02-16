@@ -13,7 +13,7 @@ module Importer
 
     MxHost.transaction do
       MxHost.where(address: result.host).each do |host|
-        host.update_attributes! \
+        host.update_columns \
           starttls:         result.starttls?,
           tls_cipher_suite: result.tls_cipher_suite,
           tls_version:      result.tls_version,
