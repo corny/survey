@@ -4,6 +4,7 @@ class RawCertificate < ActiveRecord::Base
     :public_key,
     :subject,
     :issuer,
+    :extensions,
     to: :x509
 
   scope :fingerprint, ->(val) do
@@ -39,6 +40,21 @@ class RawCertificate < ActiveRecord::Base
 
   def x509
     @x509 ||= OpenSSL::X509::Certificate.new(raw)
+  end
+
+  def names
+    # subject alt names have precendece over common names
+    subject_alt_names || common_names
+  end
+
+  def subject_alt_names
+    if e = extensions.find{|e| e.oid == 'subjectAltName' }
+      e.value.split(",").map{|c| c.strip.gsub(/^DNS:/, "") }
+    end
+  end
+
+  def common_names
+    subject.to_a.map{|a| a[1] if a[0]=='CN' }.compact
   end
 
   def key_size

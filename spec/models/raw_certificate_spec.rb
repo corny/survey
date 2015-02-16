@@ -10,12 +10,15 @@ describe RawCertificate do
     let(:filename){ "rsa2048" }
     its(:key_size){ should == 2048 }
     its(:key_type){ should == "RSA" }
+    its("names.size"){ should == 20 }
+    it{ expect(subject.names).to include *%w( mx.google.com aspmx.l.google.com ) }
   end
 
   context 'dsa' do
     let(:filename){ "dsa" }
     its(:key_size){ should == 1024 }
     its(:key_type){ should == "DSA" }
+    its(:names){ should == ['protein.sk'] }
   end
 
   context 'ec' do
