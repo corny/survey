@@ -42,6 +42,10 @@ class RawCertificate < ActiveRecord::Base
     @x509 ||= OpenSSL::X509::Certificate.new(raw)
   end
 
+  def valid_for_name?(name)
+    OpenSSL::SSL.verify_certificate_identity(x509, name)
+  end
+
   def names
     # subject alt names have precendece over common names
     subject_alt_names || common_names

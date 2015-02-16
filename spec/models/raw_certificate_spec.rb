@@ -12,6 +12,8 @@ describe RawCertificate do
     its(:key_type){ should == "RSA" }
     its("names.size"){ should == 20 }
     it{ expect(subject.names).to include *%w( mx.google.com aspmx.l.google.com ) }
+    it{ expect(subject.valid_for_name? "mx.google.com").to eq true }
+    it{ expect(subject.valid_for_name? "foo.google.com").to eq false }
   end
 
   context 'dsa' do
@@ -19,6 +21,9 @@ describe RawCertificate do
     its(:key_size){ should == 1024 }
     its(:key_type){ should == "DSA" }
     its(:names){ should == ['protein.sk'] }
+    it{ expect(subject.valid_for_name? "protein.sk").to eq true }
+    it{ expect(subject.valid_for_name? "www.protein.sk").to eq false }
+    it{ expect(subject.valid_for_name? "sk").to eq false }
   end
 
   context 'ec' do
