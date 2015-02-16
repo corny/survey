@@ -28,7 +28,7 @@ class MxHost < ActiveRecord::Base
     end
   end
 
-  def valid_address?
+  def self.valid_address?(address)
     addr = address.to_s
     addr != "0.0.0.0" && addr !~ /^(::|f[de])/
   end

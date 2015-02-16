@@ -1,0 +1,17 @@
+%h1 MX Hosts
+%table.table.table-condensed.table-striped.table-hover
+  %thead
+    %tr
+      %th Hostname
+      %th Address
+      %th TLS Version
+      %th Certificate
+  %tbody
+    = render @entries
+
+%h1 Hostnames per Address
+%ul
+  - Stats.hostnames_per_address.each do |mx_host|
+    %li
+      = mx_host.address
+      .badge.bage-default= mx_host.count
