@@ -36,8 +36,10 @@ ActiveRecord::Schema.define(version: 20150128234726) do
   create_table "domains", force: :cascade do |t|
     t.string "name",                  null: false
     t.text   "mx_hosts", default: [],              array: true
+    t.string "error"
   end
 
+  add_index "domains", ["error"], name: "index_domains_on_error", using: :btree
   add_index "domains", ["mx_hosts"], name: "index_domains_on_mx_hosts", using: :btree
   add_index "domains", ["name"], name: "index_domains_on_name", unique: true, using: :btree
 
