@@ -1,34 +1,46 @@
+require 'icann'
+
 class Domain < ActiveRecord::Base
+
+  RESOLVER = '8.8.8.8'
 
   after_create :enqueue_resolve
 
-  scope :without_mx, ->{ where 'ARRAY_LENGTH(mx_hosts,1) IS NULL' }
-
-  # create mx_hosts by hostname
-  def create_mx_hosts
-    mx_hosts = []
-    Resolv::DNS.open do |dns|
-      transaction do
-        dns.getresources(name, Resolv::DNS::Resource::IN::MX).each do |record|
-          hostname = record.exchange.to_s.downcase
-          MxHost.create_by_hostname(hostname)
-          mx_hosts << hostname
-        end
-      end
-    end
-    self.update_attributes! mx_hosts: mx_hosts
-  end
+  scope :with_mx,       ->{ where 'ARRAY_LENGTH(mx_hosts,1) > 0' }
+  scope :without_mx,    ->{ where 'ARRAY_LENGTH(mx_hosts,1) IS NULL' }
+  scope :with_error,    ->{ where 'error IS NOT NULL' }
+  scope :without_error, ->{ where 'error IS NULL' }
 
   def enqueue_resolve
     ResolverJob.perform_later(self, 'create_mx_hosts')
   end
 
-  def self.stats
-    {
-      domains_total:      count,
-      domains_without_mx: without_mx.count,
-      mx_total:           MxHost.count,
-    }
+  # SELECT COUNT(*), unnest(mx_hosts) FROM domains GROUP BY unnest(mx_hosts) ORDER BY COUNT(*) DESC;
+
+  def valid_mx?
+    mx_hosts.any?{|name| ICANN.fqdn?(name) }
+  end
+
+  def invalid_mx?
+    mx_hosts.any?{|name| !ICANN.fqdn?(name) }
+  end
+
+  def self.mx_hosts
+    connection.select_values "SELECT unnest(mx_hosts) from domains GROUP BY unnest(mx_hosts)"
+  end
+
+  def mx_validity
+    valid   = valid_mx?
+    invalid = invalid_mx?
+    if valid && invalid
+      :mixed
+    elsif valid
+      :valid
+    elsif invalid
+      :invalid
+    else
+      nil
+    end
   end
 
 end

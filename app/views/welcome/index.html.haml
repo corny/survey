@@ -7,6 +7,12 @@
   %dt MX Hosts
   %dd= MxHost.count
 
+%h2 MX Lookup
+%dl.with-charts
+  - Domain.stats.each do |key,val|
+    %dt= key
+    %dd= val
+
 %h2 STARTTLS
 %dl.dl-horizontal.with-charts
   %dt supported
