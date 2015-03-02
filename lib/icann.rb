@@ -2,7 +2,7 @@ module ICANN
 
   extend self
 
-  HOST_PATTERN = /\A(xn--+)?[a-z0-9]+(-[a-z0-9]+)*\z/
+  HOST_PATTERN = /\A(xn--+)?[a-z0-9]+(-+[a-z0-9]+)*\z/
 
   def tlds
     @tlds ||= read_tlds

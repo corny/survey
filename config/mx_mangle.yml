@@ -1,0 +1,89 @@
+#
+# Weist Domains zu einer Firma
+#
+- name: Google
+  country: us
+  domains:
+  - google.com
+  - googlemail.com
+  - psmtp.com
+
+- name: Microsoft
+  country: us
+  domains:
+  - outlook.com
+  - live.com
+  - hotmail.com
+
+- name: Symantec
+  country: us
+  domains:
+  - messagelabs.com
+
+- name: "McAfee, Inc."
+  country: us
+  domains:
+  - mxlogic.net
+  - mxlogicmx.net
+
+- name: "1&1 Internet AG"
+  country: de
+  domains:
+  - kundenserver.de
+  - 1and1.com
+
+- name: domainfactory GmbH
+  country: de
+  domains:
+  - ispgateway.de
+
+- name: "The Go Daddy Group, Inc."
+  country: de
+  domains:
+  - secureserver.net
+
+- name: Jimdo GmbH
+  country: de
+  domains:
+  - emailsrvr.com
+
+- name: Tencent QQ
+  country: cn
+  domains:
+  - qq.com
+
+- name: "Namecheap Inc."
+  country: us
+  domains:
+  - registrar-servers.com
+
+- name: OVH SAS
+  country: fr
+  domains:
+  - ovh.net
+
+- name: Yandex
+  country: ru
+  domains:
+  - yandex.ru
+  - yandex.net
+
+- name: "DreamHost, LLC"
+  country: us
+  domains:
+  - dreamhost.com
+
+- name: Zoho Corporation Pvt. Ltd.
+  country: us
+  domains:
+  - zohomail.com
+
+- name: Locaweb
+  country: br
+  domains:
+  - locaweb.com.br
+
+- name: Mimecast
+  country: uk
+  domains:
+  -  mimecast.com
