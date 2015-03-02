@@ -1,7 +1,26 @@
 #!/usr/bin/env ruby
+#
+# Import results from dnsforward
+#
 require_relative '../config/environment'
 
+i = 0
+
 STDIN.each_line do |line|
-  d = Domain.find_or_create_by(name: line.split("/").first.downcase)
-  raise "unable to import #{line}#{d.errors.inspect}" if d.new_record?
+  json     = JSON.parse(line)
+  error    = json['error'].presence
+  mx_hosts = (json['results'] || []).map(&:downcase).map{|mx| mx[-1]=="." ? mx[0..-2] : mx }
+  error    = "timeout" if error.try :end_with?, "timeout"
+
+  begin
+    Domain.where(name: json['domain']).update_all \
+      mx_hosts: mx_hosts,
+      error:    error,
+      dnssec:   json['security'].split(":").first
+  rescue ActiveRecord::StatementInvalid
+    STDERR.puts $!.message
+  end
+
+  i += 1
+  puts "#{i} #{json['domain']}"
 end
