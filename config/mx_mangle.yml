@@ -1,7 +1,7 @@
 #
 # Weist Domains zu einer Firma
 #
-- name: Google
+- name: Google Inc.
   country: us
   domains:
   - google.com
@@ -38,7 +38,7 @@
   - ispgateway.de
 
 - name: "The Go Daddy Group, Inc."
-  country: de
+  country: en
   domains:
   - secureserver.net
 

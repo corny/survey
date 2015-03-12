@@ -2,7 +2,9 @@ class CreateMxHosts < ActiveRecord::Migration
   def change
     create_table :mx_hosts do |t|
       t.string :hostname, null: false
-      t.inet   :address,  null: false
+      t.inet   :address
+      t.string :dnserr, index: true
+      t.string :dnssec, index: true
 
       t.boolean :starttls
       t.column  :tls_version,      :tls_version,      index: true

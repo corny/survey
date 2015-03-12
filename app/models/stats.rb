@@ -87,6 +87,41 @@ module Stats
     end
   end
 
+  def mx_address_stats
+    addresses = MxHost.connection.select_values("SELECT count(*) FROM mx_hosts WHERE address IS NOT null GROUP BY address").map(&:to_i)
+
+    result = {
+      # Gesamtzahl von Hostnamen
+      host_count:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_hosts"),
+      host_with_ip: select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_hosts WHERE address IS NOT null"),
+
+      # Anzahl eindeutiger IP-Adressen
+      ip_count:  addresses.count,
+
+      # Durchnittliche Anzahl Hostnamen pro IP-Adresse
+      hosts_per_ip: addresses.mean,
+
+      # Hosts mit einer IP-Adresse
+      #with_single_ip: addresses.inject(0){|sum,i| sum + (i==1 ? 1 : 0) },
+    }
+
+    # Anteil X an Gesamtzahl der Hostnamen
+    {
+      without_ip:  MxHost.without_address.without_error.count,
+      servfail:    MxHost.without_address.with_error.count,
+      ipv4_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_hosts AS outer_hosts WHERE family(address)=4 AND NOT EXISTS (SELECT 1 FROM mx_hosts WHERE hostname=outer_hosts.hostname AND family(address)=6)"),
+      ipv6_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_hosts AS outer_hosts WHERE family(address)=6 AND NOT EXISTS (SELECT 1 FROM mx_hosts WHERE hostname=outer_hosts.hostname AND family(address)=4)"),
+      ipv4and6:    select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_hosts AS outer_hosts WHERE family(address)=6 AND     EXISTS (SELECT 1 FROM mx_hosts WHERE hostname=outer_hosts.hostname AND family(address)=4)"),
+    }.each do |key,count|
+      result[key] = {
+        count: count,
+        share: (count.to_f / result[:host_count]).round(4)
+      }
+    end
+
+    result
+  end
+
   def tls_versions
     MxHost.where("tls_version IS NOT NULL").select("tls_version, COUNT(*) AS count").group(:tls_version).order(:tls_version)
   end
@@ -97,6 +132,10 @@ module Stats
 
   def issuers(limit=50)
     Certificate.select("min(id) AS id, issuer_id, count(*) AS count").group(:issuer_id).order("count DESC").limit(limit)
+  end
+
+  def select_int(sql)
+    ActiveRecord::Base.connection.select_value(sql).to_i
   end
 
 end

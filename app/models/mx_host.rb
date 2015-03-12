@@ -2,31 +2,10 @@ class MxHost < ActiveRecord::Base
 
   belongs_to :certificate, foreign_key: :certificate_id, class_name: 'RawCertificate'
 
-  Known = Set.new
-
-  def self.known
-    @known ||= Set.new MxHost.all.map(&:hostname)
-  end
-
-  def self.create_by_hostname(hostname)
-    hostname = hostname.downcase
-
-    # skip if already exists
-    return if known.include?(hostname)
-    known << hostname
-
-    addresses = Resolv::DNS.open do |dns|
-      dns.getaddresses(hostname)
-    end
-    
-    begin
-      transaction do
-        addresses.each do |record|
-          find_or_create_by(hostname: hostname, address: record.to_s)
-        end
-      end
-    end
-  end
+  scope :with_address,    ->{ where "address IS NOT null" }
+  scope :without_address, ->{ where "address IS null" }
+  scope :with_error,      ->{ where "dnserr IS NOT null" }
+  scope :without_error,   ->{ where "dnserr IS null" }
 
   def self.valid_address?(address)
     addr = address.to_s

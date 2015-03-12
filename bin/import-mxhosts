@@ -11,25 +11,20 @@ STDIN.each_line do |line|
   json      = JSON.parse(line)
   error     = json['error'].presence
   addresses = json['results']
+  addresses = [nil] if addresses.blank?
+  domain    = json['domain']
+  domain    = domain[0..-2] if domain.end_with?('.')
   error     = "timeout" if error.try :end_with?, "timeout"
 
-  if addresses
-    addresses.each do |addr|
-      # MxHost.find_or_create_by(hostname: json['domain'][0..-2], address: addr)
-    end
+  addresses.each do |addr|
+    MxHost.find_or_create_by \
+      hostname: domain,
+      address:  addr,
+      dnserr:   error,
+      dnssec:   json['security'].split(":").first
   end
 
   i += 1
   puts "#{i} #{json['domain']}"
-
-  if error
-    status = error
-  else
-    status = addresses ? 'addresses' : 'empty'
-  end
-
-  result[status] ||= 0
-  result[status]  += 1
 end
 
-puts result.to_yaml
