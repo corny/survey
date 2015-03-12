@@ -1,10 +1,10 @@
 class CreateTypes < ActiveRecord::Migration
   def change
     create_type 'tls_version', %w(
-      SSLv30
-      TLSv10
-      TLSv11
-      TLSv12
+      SSLv3
+      TLSv1.0
+      TLSv1.1
+      TLSv1.2
     )
   
     create_type 'tls_cipher_suite', YAML.load_file(Rails.root.join "config/cipher_suites.yml").values

@@ -5,10 +5,11 @@ describe Zgrab do
 
   subject{ Zgrab::Result.new JSON.parse(Rails.root.join("spec/fixtures/#{fixture}.json").read) }
 
+  # echo 109.69.71.161 | ./zgrab --port 25 --smtp --starttls --banners tlsscan | head -n1 > spec/fixtures/valid.json
   context 'valid' do
     let(:fixture){ 'valid' }
     its(:starttls?){ should == true }
-    its(:tls_version){ should == 'TLSv12' }
+    its(:tls_version){ should == 'TLSv1.2' }
     its(:tls_cipher_suite){ should == 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256' }
     its(:names){ should == %w( mail.digineo.de digineo.de ) }
     its(:certificate_valid?){ should == true }
@@ -16,14 +17,6 @@ describe Zgrab do
     it do
       expect(subject.certificates.first.subject.to_a.select{|e| e[0]=='CN'}).to eq [["CN", "mail.digineo.de", 19]]
     end
-  end
-  
-  context 'hostname mismatch' do
-    let(:fixture){ 'hostname-mismatch'}
-    its(:starttls?){ should == true }
-    its(:names){ should == %w( *.ispgateway.de ispgateway.de ) }
-    its(:certificate_valid?){ should == false }
-    its(:self_signed?){ should == false }
   end
 
   context 'no starttls' do
@@ -40,6 +33,16 @@ describe Zgrab do
     its(:starttls?){ should == nil }
     its(:certificate_valid?){ should == nil }
     its(:self_signed?){ should == nil }
+    its(:error){ should == "read: i/o timeout" }
+  end
+
+  context 'negative_serial' do
+    let(:fixture){ 'negative_serial' }
+    its(:starttls?){ should == true }
+    its(:certificate_valid?){ should == nil }
+    its(:self_signed?){ should == nil }
+    its("certificates.count"){ should == 1 }
+    its(:error){ should include "negative serial number" }
   end
 
 end

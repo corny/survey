@@ -1,14 +1,5 @@
 module Zgrab
 
-  CipherSuites = YAML.load_file(Rails.root.join "config/cipher_suites.yml")
-
-  TLSVersions = {
-    0x0300 => 'SSLv30',
-    0x0301 => 'TLSv10',
-    0x0302 => 'TLSv11',
-    0x0303 => 'TLSv12',
-  }
-
   class Result
     def initialize(data)
       @data = data
@@ -31,11 +22,11 @@ module Zgrab
     end
 
     def tls_version
-      TLSVersions[server_hello['version']]
+      (value = server_hello['version']) && value['name']
     end
 
     def tls_cipher_suite
-      CipherSuites[server_hello['cipher_suite']]
+      (value = server_hello['cipher_suite']) && value['name']
     end
 
     def server_hello
@@ -52,13 +43,13 @@ module Zgrab
     end
 
     def certificates
-      server_certificates('certificates').try :map do |cert|
+      server_certificates('raw').try :map do |cert|
         OpenSSL::X509::Certificate.new Base64.decode64(cert)
       end
     end
 
     def parsed_certificate(*args)
-      fetch server_certificates, 'parsed', *args
+      fetch server_certificates, 'certificate', *args
     end
 
     def signature(*args)
@@ -74,7 +65,13 @@ module Zgrab
     end
 
     def names
-      fetch server_certificates, 'parsed', 'certificate', 'extensions', 'subject_alt_name', 'dns_names'
+      parsed_certificate 'certificate', 'extensions', 'subject_alt_name', 'dns_names'
+    end
+
+    def error
+      error = @data['log'].last['error']
+      error.try :sub!, /^(dial|read|write) tcp \S+: /, "\\1: "
+      error
     end
 
     protected
