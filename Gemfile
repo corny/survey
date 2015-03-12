@@ -33,6 +33,8 @@ gem 'turbolinks'
 
 gem 'sidekiq', '~> 3.3'
 
+gem 'ipaddr_extensions', '~> 1.0'
+
 # Use Unicorn as the app server
 # gem 'unicorn'
 

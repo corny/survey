@@ -122,6 +122,16 @@ module Stats
     result
   end
 
+  # Number of addresses per Scope
+  def mx_address_scopes
+    MxHost.with_address.uniq.pluck(:address).inject({}) do |result,address|
+      scope = address.scope
+      result[scope] ||= 0
+      result[scope]  += 1
+      result
+    end
+  end
+
   def tls_versions
     MxHost.where("tls_version IS NOT NULL").select("tls_version, COUNT(*) AS count").group(:tls_version).order(:tls_version)
   end
