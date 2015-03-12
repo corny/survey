@@ -88,12 +88,12 @@ module Stats
   end
 
   def mx_address_stats
-    addresses = MxHost.connection.select_values("SELECT count(*) FROM mx_hosts WHERE address IS NOT null GROUP BY address").map(&:to_i)
+    addresses = MxRecord.connection.select_values("SELECT count(*) FROM mx_records WHERE address IS NOT null GROUP BY address").map(&:to_i)
 
     result = {
       # Gesamtzahl von Hostnamen
-      host_count:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_hosts"),
-      host_with_ip: select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_hosts WHERE address IS NOT null"),
+      host_count:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records"),
+      host_with_ip: select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records WHERE address IS NOT null"),
 
       # Anzahl eindeutiger IP-Adressen
       ip_count:  addresses.count,
@@ -107,11 +107,11 @@ module Stats
 
     # Anteil X an Gesamtzahl der Hostnamen
     {
-      without_ip:  MxHost.without_address.without_error.count,
-      servfail:    MxHost.without_address.with_error.count,
-      ipv4_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_hosts AS outer_hosts WHERE family(address)=4 AND NOT EXISTS (SELECT 1 FROM mx_hosts WHERE hostname=outer_hosts.hostname AND family(address)=6)"),
-      ipv6_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_hosts AS outer_hosts WHERE family(address)=6 AND NOT EXISTS (SELECT 1 FROM mx_hosts WHERE hostname=outer_hosts.hostname AND family(address)=4)"),
-      ipv4and6:    select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_hosts AS outer_hosts WHERE family(address)=6 AND     EXISTS (SELECT 1 FROM mx_hosts WHERE hostname=outer_hosts.hostname AND family(address)=4)"),
+      without_ip:  MxRecord.without_address.without_error.count,
+      servfail:    MxRecord.without_address.with_error.count,
+      ipv4_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records AS outer_hosts WHERE family(address)=4 AND NOT EXISTS (SELECT 1 FROM mx_records WHERE hostname=outer_hosts.hostname AND family(address)=6)"),
+      ipv6_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records AS outer_hosts WHERE family(address)=6 AND NOT EXISTS (SELECT 1 FROM mx_records WHERE hostname=outer_hosts.hostname AND family(address)=4)"),
+      ipv4and6:    select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records AS outer_hosts WHERE family(address)=6 AND     EXISTS (SELECT 1 FROM mx_records WHERE hostname=outer_hosts.hostname AND family(address)=4)"),
     }.each do |key,count|
       result[key] = {
         count: count,
@@ -124,7 +124,7 @@ module Stats
 
   # Number of addresses per Scope
   def mx_address_scopes
-    MxHost.with_address.uniq.pluck(:address).inject({}) do |result,address|
+    MxRecord.with_address.uniq.pluck(:address).inject({}) do |result,address|
       scope = address.scope
       result[scope] ||= 0
       result[scope]  += 1
@@ -133,11 +133,11 @@ module Stats
   end
 
   def tls_versions
-    MxHost.where("tls_version IS NOT NULL").select("tls_version, COUNT(*) AS count").group(:tls_version).order(:tls_version)
+    MxRecord.where("tls_version IS NOT NULL").select("tls_version, COUNT(*) AS count").group(:tls_version).order(:tls_version)
   end
 
   def hostnames_per_address(limit=50)
-    MxHost.select("address, COUNT(*) AS count").group(:address).order("count DESC").limit(limit)
+    MxRecord.with_address.select("address, COUNT(*) AS count").group(:address).order("count DESC").limit(limit)
   end
 
   def issuers(limit=50)

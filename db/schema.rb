@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150128234726) do
+ActiveRecord::Schema.define(version: 20150312211751) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -47,6 +47,17 @@ ActiveRecord::Schema.define(version: 20150128234726) do
 
 # Could not dump table "mx_hosts" because of following StandardError
 #   Unknown type 'tls_version' for column 'tls_version'
+
+  create_table "mx_records", force: :cascade do |t|
+    t.string "hostname", null: false
+    t.inet   "address"
+    t.string "dnserr"
+    t.string "dnssec"
+  end
+
+  add_index "mx_records", ["address", "hostname"], name: "index_mx_records_on_address_and_hostname", unique: true, using: :btree
+  add_index "mx_records", ["dnserr"], name: "index_mx_records_on_dnserr", using: :btree
+  add_index "mx_records", ["dnssec"], name: "index_mx_records_on_dnssec", using: :btree
 
   create_table "raw_certificates", force: :cascade do |t|
     t.binary "sha1_fingerprint", null: false

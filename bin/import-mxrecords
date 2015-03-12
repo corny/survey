@@ -17,7 +17,7 @@ STDIN.each_line do |line|
   error     = "timeout" if error.try :end_with?, "timeout"
 
   addresses.each do |addr|
-    MxHost.find_or_create_by \
+    MxRecord.find_or_create_by \
       hostname: domain,
       address:  addr,
       dnserr:   error,
