@@ -47,7 +47,7 @@ class RawCertificate < ActiveRecord::Base
   end
 
   def names
-    # subject alt names have precendece over common names
+    # subject alt names have precedence over common names
     subject_alt_names || common_names
   end
 
