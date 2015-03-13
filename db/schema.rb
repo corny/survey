@@ -49,13 +49,15 @@ ActiveRecord::Schema.define(version: 20150312211751) do
 #   Unknown type 'tls_version' for column 'tls_version'
 
   create_table "mx_records", force: :cascade do |t|
-    t.string "hostname", null: false
-    t.inet   "address"
-    t.string "dnserr"
-    t.string "dnssec"
+    t.string  "hostname",     null: false
+    t.inet    "address"
+    t.string  "dnserr"
+    t.string  "dnssec"
+    t.boolean "cert_matches"
   end
 
   add_index "mx_records", ["address", "hostname"], name: "index_mx_records_on_address_and_hostname", unique: true, using: :btree
+  add_index "mx_records", ["cert_matches"], name: "index_mx_records_on_cert_matches", using: :btree
   add_index "mx_records", ["dnserr"], name: "index_mx_records_on_dnserr", using: :btree
   add_index "mx_records", ["dnssec"], name: "index_mx_records_on_dnssec", using: :btree
 

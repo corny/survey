@@ -133,7 +133,7 @@ module Stats
   end
 
   def tls_versions
-    MxRecord.where("tls_version IS NOT NULL").select("tls_version, COUNT(*) AS count").group(:tls_version).order(:tls_version)
+    MxHost.where("tls_version IS NOT NULL").select("tls_version, COUNT(*) AS count").group(:tls_version).order(:tls_version)
   end
 
   def hostnames_per_address(limit=50)

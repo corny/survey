@@ -21,9 +21,14 @@ module Importer
         cert_valid:       result.certificate_valid?,
         certificate_id:   certificate.try(:id)
       
-      #MxRecord.where(address: result.host).each do |host|
-      #  certificate.valid_for_name?(host.hostname)
-      #end
+      begin
+        MxRecord.where(address: result.host).each do |record|
+          record.update_attributes \
+            cert_matches: certificate.try(:valid_for_name?, record.hostname)
+        end
+      rescue OpenSSL::OpenSSLError
+        STDERR.puts $!.inspect
+      end
     end
 
     result
