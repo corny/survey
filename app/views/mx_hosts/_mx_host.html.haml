@@ -1,6 +1,6 @@
 %tr
-  %td= mx_host.hostname
   %td= mx_host.address
+  %td= mx_host.mx_records.map(&:hostname)
   - if mx_host.starttls
     %td= mx_host.tls_version
     %td{ class: mx_host.cert_valid ? 'success' : 'danger' }= mx_host.cert_valid ? 'valid' : 'invalid'

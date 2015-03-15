@@ -1,6 +1,29 @@
 %h1= params[:id]
 
+%p DNSSEC: #{@domain.dnssec}
+
 %pre= DomainSummary.new(@domain)
+
+%table.table.table-striped.table-hover.table-condensed
+  %thead
+    %th Hostname / Address
+    %th STARTTLS
+    %th DNSSEC
+    %th DANE
+    %th Certificate valid
+    %th Subject matches MX
+    %th Subject matches domain
+  %tbody
+    - @domain.mx_hosts.each do |name|
+      - records = MxRecord.where(hostname: name).all
+      %tr
+        %td= name
+        %td= records.map(&:starttls).uniq
+        %td= records.map(&:dnssec).uniq
+        %td ...
+        %td= records.map(&:cert_matches).uniq
+        %td= records.map(&:cert_valid).uniq
+        %td= records.map{|r| r.valid_for_name?(@domain.name) }.uniq
 
 - @domain.mx_hosts.each do |name|
   %h3= name

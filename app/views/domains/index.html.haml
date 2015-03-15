@@ -1,0 +1,7 @@
+%h1 Domains
+
+%h2 Examples
+
+%ul
+  - %w( example.com google.com hotmail.com posteo.de web.de uni-bremen.de ovh.net ).each do |domain|
+    %li= link_to domain, domain_path(domain)

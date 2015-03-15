@@ -11,9 +11,18 @@ class MxRecord < ActiveRecord::Base
 
   scope :cert_valid,      ->(bool){ where("EXISTS (SELECT * FROM mx_hosts WHERE address=mx_records.address AND cert_valid=" << (bool ? 'TRUE' : 'FALSE') << ")") }
 
+  delegate *%i(
+    starttls
+    cert_valid
+  ), to: :mx_host
+
   def self.valid_address?(address)
     addr = address.to_s
     addr != "0.0.0.0" && addr !~ /^(::|f[de])/
+  end
+
+  def valid_for_name?(name)
+    mx_host.try(:certificate).try(:valid_for_name?, name)
   end
 
 end
