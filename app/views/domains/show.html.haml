@@ -1,0 +1,15 @@
+%h1= params[:id]
+
+%pre= DomainSummary.new(@domain)
+
+- @domain.mx_hosts.each do |name|
+  %h3= name
+  - MxRecord.where(hostname: name).each do |record|
+    %dl.dl-horizontal
+      - %w( address dnserr dnssec cert_matches ).each do |key|
+        %dt #{key}:
+        %dd= record.send(key) || "—"
+      - if host = record.mx_host
+        - %w( error starttls tls_version tls_cipher_suite cert_valid certificate_id ).each do |key|
+          %dt #{key}:
+          %dd= host.send(key) || "—"

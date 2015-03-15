@@ -14,7 +14,7 @@ STDIN.each_line do |line|
 
   begin
     Domain.where(name: json['domain']).update_all \
-      mx_hosts: mx_hosts,
+      mx_hosts: mx_hosts.uniq,
       error:    error,
       dnssec:   json['security'].split(":").first
   rescue ActiveRecord::StatementInvalid
