@@ -33,6 +33,13 @@
         %dt #{key}:
         %dd= record.send(key) || "—"
       - if host = record.mx_host
-        - %w( error starttls tls_version tls_cipher_suite cert_valid certificate_id ).each do |key|
+        - %w( error starttls ).each do |key|
           %dt #{key}:
           %dd= host.send(key) || "—"
+        - if host.starttls
+          - %w( tls_version tls_cipher_suite cert_valid certificate_id ).each do |key|
+            %dt #{key}:
+            %dd= host.send(key) || "—"
+          - if host.certificate
+            %dt Common Names
+            %dd= host.certificate.names

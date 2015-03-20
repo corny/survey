@@ -25,4 +25,8 @@ class MxRecord < ActiveRecord::Base
     mx_host.try(:certificate).try(:valid_for_name?, name)
   end
 
+  def cert_invalid_or_mismatches?
+    cert_matches==false || cert_valid==false
+  end
+
 end

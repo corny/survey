@@ -11,6 +11,10 @@ class RawCertificate < ActiveRecord::Base
     where "sha1_fingerprint=E?", "\\\\x#{val}"
   end
 
+  has_one :certificate,
+    foreign_key: :sha1_fingerprint,
+    primary_key: :sha1_fingerprint
+
   def self.find_or_create(x509, seen_at: Time.now)
     transaction do
       sha1 = x509.sha1 binary: true

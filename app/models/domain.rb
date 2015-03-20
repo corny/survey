@@ -35,4 +35,8 @@ class Domain < ActiveRecord::Base
     end
   end
 
+  def summary
+    DomainSummary.new self
+  end
+
 end
