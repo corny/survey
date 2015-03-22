@@ -1,4 +1,5 @@
 require 'icann'
+require 'nsupdate'
 
 class Domain < ActiveRecord::Base
 
@@ -37,6 +38,10 @@ class Domain < ActiveRecord::Base
 
   def summary
     DomainSummary.new self
+  end
+
+  def nsupdate
+    NsUpdate.update name, summary.to_s
   end
 
 end
