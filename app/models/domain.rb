@@ -44,4 +44,14 @@ class Domain < ActiveRecord::Base
     NsUpdate.update name, summary.to_s
   end
 
+  def self.nsupdate(**options)
+    find_in_batches options do |group|
+      NsUpdate.execute do |upd|
+        group.each do |domain|
+          upd.update domain.name, domain.summary.to_s
+        end
+      end
+    end
+  end
+
 end
