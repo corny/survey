@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150312211751) do
+ActiveRecord::Schema.define(version: 20150323013629) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -38,6 +38,7 @@ ActiveRecord::Schema.define(version: 20150312211751) do
     t.text   "mx_hosts", default: [],              array: true
     t.string "error"
     t.string "dnssec"
+    t.string "txt"
   end
 
   add_index "domains", ["dnssec"], name: "index_domains_on_dnssec", using: :btree
