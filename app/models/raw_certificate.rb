@@ -12,8 +12,8 @@ class RawCertificate < ActiveRecord::Base
   end
 
   has_one :certificate,
-    foreign_key: :sha1_fingerprint,
-    primary_key: :sha1_fingerprint
+    foreign_key: :id,
+    primary_key: :id
 
   def self.find_or_create(x509, seen_at: Time.now)
     transaction do
