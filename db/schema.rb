@@ -61,6 +61,7 @@ ActiveRecord::Schema.define(version: 20150323013629) do
   add_index "mx_records", ["cert_matches"], name: "index_mx_records_on_cert_matches", using: :btree
   add_index "mx_records", ["dnserr"], name: "index_mx_records_on_dnserr", using: :btree
   add_index "mx_records", ["dnssec"], name: "index_mx_records_on_dnssec", using: :btree
+  add_index "mx_records", ["hostname"], name: "index_mx_records_on_hostname", using: :btree
 
   create_table "raw_certificates", force: :cascade do |t|
     t.binary "sha1_fingerprint", null: false

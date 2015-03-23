@@ -1,7 +1,7 @@
 class CreateMxRecords < ActiveRecord::Migration
   def change
     create_table :mx_records do |t|
-      t.string :hostname, null: false
+      t.string :hostname, null: false, index: true
       t.inet   :address
       t.string :dnserr, index: true
       t.string :dnssec, index: true
