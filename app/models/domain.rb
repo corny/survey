@@ -48,7 +48,7 @@ class Domain < ActiveRecord::Base
     find_in_batches options do |group|
       NsUpdate.execute do |upd|
         group.each do |domain|
-          upd.update domain.name, domain.summary.to_s
+          upd.update domain.name, domain.txt
         end
       end
     end
