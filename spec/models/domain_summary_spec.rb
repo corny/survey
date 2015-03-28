@@ -69,21 +69,21 @@ describe DomainSummary do
     let(:starttls_b){ true }
     its(:starttls){ should == true }
 
-    context 'invalid certificates' do
+    context 'untrusted certificates' do
       let(:cert_valid_a){ false }
       let(:cert_valid_b){ false }
-      its(:certificate){ should == ["invalid", "match-mx"] }
+      its(:certificate){ should == ["untrusted", "match-mx"] }
     end
 
     context 'only one matching mx' do
       let(:cert_matches_a){ true }
       let(:cert_matches_b){ false }
-      its(:certificate){ should == ["invalid"] }
+      its(:certificate){ should == ["untrusted"] }
     end
 
     context 'not matching mx' do
       let(:cn_a){ ["xxx"] }
-      its(:certificate){ should == ["invalid"] }
+      its(:certificate){ should == ["untrusted"] }
     end
 
     context 'valid certificates' do
@@ -91,18 +91,18 @@ describe DomainSummary do
       let(:cert_valid_b){ true }
 
       context 'one matching domain' do
-        its(:certificate){ should == ["valid"] }
+        its(:certificate){ should == ["trusted"] }
         let(:cn_a){ [domain.name] }
       end
 
       context 'both matching only domain' do
         let(:cn_a){ [domain.name] }
         let(:cn_b){ cn_a }
-        its(:certificate){ should == ["valid", "match-domain"] }
+        its(:certificate){ should == ["trusted", "match-domain"] }
 
         context 'and matching mx' do
           let(:cn_a){ [domain.name] + mx_hosts }
-          its(:certificate){ should == ["valid", "match-mx", "match-domain"] }
+          its(:certificate){ should == ["trusted", "match-mx", "match-domain"] }
         end
       end
     end

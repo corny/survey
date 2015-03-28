@@ -16,7 +16,7 @@ class DomainSummary
     return unless records
 
     results = []
-    results << (records.all?(&:cert_valid) ? "valid" : "invalid")
+    results << (records.all?(&:cert_valid) ? "trusted" : "untrusted")
     results << "match-mx"     if records.all?(&:cert_matches)
     results << "match-domain" if records.all?{|r| r.valid_for_name? @domain.name }
     results
