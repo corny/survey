@@ -1,65 +1,46 @@
-%h1 Statistics
+%h1 TLS Policy Database
 
-%h2 Total
-%dl.dl-horizontal
-  %dt Domains
-  %dd= Domain.count
-  %dt MX Records
-  %dd= MxRecord.count
-  %dt MX Hosts
-  %dd= MxHost.count
+%p
+  The TLS Policy Database collects information about the
+  %strong TLS capability
+  and
+  %strong certificate validity
+  of mailservers on the internet.
 
-%h2 MX-Hosts
-.row
-  .col-md-6
-    %h3 STARTTLS support
-    %dl.dl-horizontal.with-charts
-      %dt supported
-      %dd= MxHost.where(starttls: true).count
-      %dt unsupported
-      %dd= MxHost.where(starttls: false).count
-      %dt unreachable
-      %dd= MxHost.where(starttls: nil).count
-  .col-md-6
-    %h3 Certificate Validity
-    %dl.dl-horizontal.with-charts
-      %dt valid
-      %dd= MxHost.where(cert_valid: true).count
-      %dt invalid
-      %dd= MxHost.where(cert_valid: false).count
-      %dt unknown
-      %dd= MxHost.where.not(certificate_id: nil).where(cert_valid: nil).count
+%p We provide a simple DNS based database to help you to secure you outgoing email connections.
 
-%h2 MX-Records with certificates
-%dl.dl-horizontal.with-charts
-  %dt valid an matching
-  %dd= MxRecord.where(cert_matches: true).cert_valid(true).count
+= render 'policy'
 
-  %dt valid an not matching
-  %dd= MxRecord.where(cert_matches: false).cert_valid(true).count
+%h2 Usage
 
-  %dt invalid and matching
-  %dd= MxRecord.where(cert_matches: true).cert_valid(false).count
+%p
+  Create a query for a TXT record of
+  %code $your-domain$.tls-scan.informatik.uni-bremen.de
+  and send it to our DNS server 134.102.201.91.
+  If we know the domain it will respond with a TXT record, otherwise you receive a NXDOMAIN.
 
-  %dt invalid and not matching
-  %dd= MxRecord.where(cert_matches: false).cert_valid(false).count
+%p
+  Use our
+  = link_to "TLS Policy Map", "https://github.com/corny/tlspolicy/tree/socketmap"
+  for
+  = link_to "Postfix", "http://www.postfix.org"
+  or build your own integration.
 
-.row
-  .col-md-6
-    %h2 TLS Versions
-    %dl.dl-horizontal.with-charts.with-charts
-      - Stats.tls_versions.each do |record|
-        %dt= record.tls_version
-        %dd= record.count
-  .col-md-6
-    %h2 TLS Cipher Suites
-    %dl.with-charts
-      - MxHost.where("tls_cipher_suite IS NOT NULL").select("tls_cipher_suite, COUNT(*) AS count").group(:tls_cipher_suite).order(:tls_cipher_suite).each do |record|
-        %dt= record.tls_cipher_suite
-        %dd= record.count
+%h3 Examples
 
-%h2 Top Issuers
-%table.table.table-condensed.table-striped.table-hover
-  %tr
-  %tbody
-    = render partial: 'subject', collection: Stats.issuers
+%h3 dig
+%pre
+  :preserve
+    $ dig @134.102.201.91 mailbox.org.tls-scan.informatik.uni-bremen.de TXT +short
+    "starttls=true certificate=trusted,match-mx,match-domain"
+
+%h3 host
+%pre
+  :preserve
+    $ host -t TXT mailbox.org.tls-scan.informatik.uni-bremen.de 134.102.201.91
+    Using domain server:
+    Name: 134.102.201.91
+    Address: 134.102.201.91#53
+    Aliases:
+
+    mailbox.org.tls-scan.informatik.uni-bremen.de descriptive text "starttls=true certificate=trusted,match-mx,match-domain"
