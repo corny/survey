@@ -74,7 +74,7 @@ class Handler(SocketServer.StreamRequestHandler):
         #print("Ending connection")
         return
       except MapError,x:
-        if code in ('PERM','TIMEOUT','NOTFOUND','OK','TEMP'):
+        if x.code in ('PERM','TIMEOUT','NOTFOUND','OK','TEMP'):
           self.write("%s %s"%(x.code,x.reason))
         else:
           self.write("%s %s %s"%('PERM',x.code,x.reason))
