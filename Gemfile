@@ -58,3 +58,8 @@ group :test do
   gem 'factory_girl_rails'
   gem 'shoulda-matchers',       require: false
 end
+
+group :deployment do
+  gem 'capistrano', '~> 3.4.0'
+  gem 'capistrano-rails'
+end
