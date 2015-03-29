@@ -136,10 +136,8 @@ class TlsPolicy(Handler):
 
         except dns.exception.Timeout:
             raise MapError('TIMEOUT', '')
-        except dns.resolver.NoAnswer:
-            raise MapError('NOTFOUND', '')
         except dns.resolver.NoNameservers:
-            raise MapError('TEMP', '')
+            raise MapError('NOTFOUND', '')
 
 
 if __name__ == "__main__":
