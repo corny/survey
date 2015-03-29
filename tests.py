@@ -9,19 +9,19 @@ from tlspolicy import *
 
 class TestStringMethods(unittest2.TestCase):
 
-    def check(self,txt):
-        return TlsPolicy(None,None).check(txt)
+    def map(self,txt):
+        return TlsPolicy().map(txt)
 
     def test_starttls_true(self):
-        self.assertEqual(self.check("starttls=true"), 'encrypt')
+        self.assertEqual(self.map("starttls=true"), 'encrypt')
 
     def test_starttls_false(self):
-        self.assertEqual(self.check("starttls=false"), 'may')
+        self.assertEqual(self.map("starttls=false"), 'may')
 
     def test_certificate_trusted_match_mx(self):
-        self.assertEqual(self.check("certificates=trusted,match-mx"), 'verify')
+        self.assertEqual(self.map("certificates=trusted,match-mx"), 'verify')
 
     def test_certificate_untrusted_match_mx(self):
-        self.assertEqual(self.check("certificates=trusted,match-domain"), 'secure')
+        self.assertEqual(self.map("certificates=trusted,match-domain"), 'secure')
 
     # TODO DANE

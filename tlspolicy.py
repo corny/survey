@@ -3,22 +3,21 @@
 # Requirements:
 # apt-get install python-dnspython
 #
+import SocketServer
 
-import socket
 import sys
 import os
 import dns.resolver
 import argparse
+import signal
+
 
 class TlsPolicy:
 
+    domain   = None
+    resolver = dns.resolver.Resolver()
 
-    def __init__(self, domain, nameserver):
-        self.domain   = domain
-        self.resolver = dns.resolver.Resolver()
-        self.resolver.nameservers = [nameserver]
-
-    def check(self, txt):
+    def map(self, txt):
         data = dict(s.split('=') for s in txt.split(" "))
 
         if "certificates" in data:
@@ -34,63 +33,72 @@ class TlsPolicy:
         else:
             return "may"
 
-    def run(self, sockpath):
-        # Make sure the socket does not already exist
+    def resolve_and_map(self, input):
+
         try:
-            os.unlink(sockpath)
-        except OSError:
-            if os.path.exists(sockpath):
-                raise
+            # Receive the data in small chunks and retransmit it
+            if not " " in input:
+                return "PERM invalid request (1)\n"
 
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            name, remaining = input.split(" ")
+            if not "," in remaining:
+                return "PERM invalid request (2)\n"
 
-        # Bind the socket to the port
-        print >>sys.stderr, 'starting up on %s' % sockpath
-        sock.bind(sockpath)
+            nexthop = remaining.split(",")[0]
+            query   = "%s.%s" % (nexthop, self.domain)
+            print("query for %s" % query)
 
-        # Listen for incoming connections
-        sock.listen(1)
+            answers = self.resolver.query(query,'TXT')
 
-        while True:
-            # Wait for a connection
-            print >>sys.stderr, 'waiting for connections'
-            connection, client_address = sock.accept()
-            try:
-                print >>sys.stderr, 'connection from', client_address
+            if len(answers) > 0:
+                return "OK %s\n" % self.map(answers[0].strings[0])
 
-                # Receive the data in small chunks and retransmit it
-                data = connection.recv(255)
-                if not " " in data:
-                    print("break 1")
-                    break;
-                name, remaining = data.split(" ")
-                if not "," in remaining:
-                    print("break 2")
-                    break;
-                nexthop, _  = remaining.split(",")
+        except dns.exception.Timeout:
+            return "TIMEOUT \n"
+        except dns.resolver.NoAnswer:
+            return "NOTFOUND \n"
+        except dns.resolver.NoNameservers:
+            return "TEMP \n"
 
-                if data:
-                    answers = self.resolver.query("%s.%s" % (nexthop, self.domain),'TXT')
 
-                    if len(answers) > 0:
-                        connection.sendall("OK %s" % self.check(answers[0].strings[0]))
-            except dns.exception.Timeout:
-                connection.sendall("TIMEOUT ")
-            except dns.resolver.NoNameservers:
-                connection.sendall("NOTFOUND ")
-            finally:
-                print("close")
-                # Clean up the connection
-                connection.close()
+class TlsPolicyHandler(SocketServer.BaseRequestHandler):
+    def handle(self):
+        self.request.sendall(TlsPolicy().resolve_and_map(self.request.recv(255)))
+
+
+class ThreadedServer(SocketServer.ThreadingMixIn, SocketServer.UnixStreamServer):
+    pass
+
 
 if __name__ == "__main__":
-
+    import socket
+    import threading
 
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('--socket',     help='path to unix socket', default="/tmp/tls_policy.sock")
     parser.add_argument('--domain',     help='domain for lookups',  default="tls-scan.informatik.uni-bremen.de")
-    parser.add_argument('--nameserver', help='nameserver to query', default="134.102.201.92")
+    parser.add_argument('--nameserver', help='nameserver to query', default="134.102.201.91")
 
     args = parser.parse_args()
 
-    TlsPolicy(args.domain, args.nameserver).run(args.socket)
+    # Set options
+    TlsPolicy.resolver.nameservers = [args.nameserver]
+    TlsPolicy.domain               = args.domain
+
+    def shutdown(signal,frame):
+        print "shutting down"
+        os.remove(args.socket)
+        server.shutdown()
+
+    # Set signal handlers
+    signal.signal(signal.SIGTERM, shutdown)
+    signal.signal(signal.SIGINT, shutdown)
+
+    # Start server
+    server = ThreadedServer(args.socket, TlsPolicyHandler)
+    thread = threading.Thread(target=server.serve_forever)
+    thread.daemon = True
+    thread.start()
+
+    print "waiting for connections"
+    signal.pause()
