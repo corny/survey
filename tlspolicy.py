@@ -134,10 +134,14 @@ class TlsPolicy(Handler):
 
             return TlsPolicy.map(answers[0].strings[0])
 
+        # In case of other results than "OK" postfix does a second
+        # lookup for the parent domain.
+        # i.e. example.com leads to a seconds lookup for .com
+        # This can be avoided by returning "OK"
         except dns.exception.Timeout:
-            raise MapError('TIMEOUT', '')
+            return "may"
         except dns.resolver.NoNameservers:
-            raise MapError('NOTFOUND', '')
+            return "may"
 
 
 if __name__ == "__main__":
