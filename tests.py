@@ -24,4 +24,4 @@ class TestStringMethods(unittest2.TestCase):
     def test_certificate_untrusted_match_mx(self):
         self.assertEqual(self.map("certificate=trusted,match-domain"), 'secure')
 
-    # TODO DANE
+    # TODO Add DANE support

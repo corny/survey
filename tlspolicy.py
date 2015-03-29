@@ -106,7 +106,7 @@ class TlsPolicy(Handler):
     resolver = dns.resolver.Resolver()
 
     # is called by handle()
-    def _handle_tls_policy(self,key):
+    def _handle_tlspolicy(self,key):
         return TlsPolicy.resolve_and_map(key)
 
     @staticmethod
@@ -145,7 +145,7 @@ class TlsPolicy(Handler):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='TLS Policy Map daemon using the socketmap protocol')
-    parser.add_argument('--socket',     help='path to unix socket', default="/var/run/tls_policy.sock")
+    parser.add_argument('--socket',     help='path to unix socket', default="/var/run/tlspolicy.sock")
     parser.add_argument('--domain',     help='domain for lookups',  default="tls-scan.informatik.uni-bremen.de")
     parser.add_argument('--nameserver', help='nameserver to query', default="134.102.201.91")
 
