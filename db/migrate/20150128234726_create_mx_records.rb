@@ -1,10 +1,13 @@
 class CreateMxRecords < ActiveRecord::Migration
   def change
-    create_table :mx_records do |t|
+    create_table :mx_records, id: false do |t|
       t.string :hostname, null: false, index: true
       t.inet   :address
-      t.string :dnserr, index: true
-      t.string :dnssec, index: true
+
+      t.boolean :dns_secure, index: true
+      t.string  :dns_error
+      t.string  :dns_bogus
+
       t.boolean :cert_matches, index: true
     end
 

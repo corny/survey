@@ -6,7 +6,7 @@ class CreateTypes < ActiveRecord::Migration
       TLSv1.1
       TLSv1.2
     )
-  
+
     create_type 'tls_cipher_suite', YAML.load_file(Rails.root.join "config/cipher_suites.yml").values
   end
 

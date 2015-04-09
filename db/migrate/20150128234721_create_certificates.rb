@@ -1,17 +1,19 @@
 class CreateCertificates < ActiveRecord::Migration
   def change
-    create_table :certificates do |t|
-      t.binary :sha1_fingerprint, null: false
-      t.column :subject_id, :bigint, null: false, index: true
-      t.column :issuer_id,  :bigint, null: false, index: true
-      t.column :key_id,     :bigint, null: false, index: true
-      t.integer :key_size,                        index: true
-      t.boolean :is_valid,       null: false
-      t.boolean :is_self_signed, null: false
+    create_table :certificates, id: false do |t|
+      t.binary :id,               null: false
+      t.binary :subject_id,       null: false, index: true
+      t.binary :issuer_id,        null: false, index: true
+      t.binary :key_id,           null: false, index: true
+      t.integer :key_size,                     index: true
+      t.boolean :is_ca
+      t.boolean :is_valid
+      t.boolean :is_self_signed
       t.string :validation_error
       t.timestamp :first_seen_at, null: false
     end
 
+    execute "ALTER TABLE certificates ADD PRIMARY KEY (id)"
     add_foreign_key :certificates, :raw_certificates, column: :id
   end
 end
