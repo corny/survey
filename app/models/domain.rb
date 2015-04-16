@@ -19,7 +19,7 @@ class Domain < ActiveRecord::Base
   end
 
   def self.mx_hosts
-    connection.select_values "SELECT unnest(mx_hosts) from domains GROUP BY unnest(mx_hosts)"
+    connection.select_values "SELECT DISTINCT unnest(mx_hosts) FROM domains"
   end
 
   def mx_validity
