@@ -8,7 +8,6 @@ class CreateDomains < ActiveRecord::Migration
       t.string  :dns_error
       t.string  :dns_bogus
 
-      t.string  :txt
       t.datetime :updated_at, index: true
     end
     add_index :domains, :name, unique: true

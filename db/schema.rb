@@ -39,7 +39,6 @@ ActiveRecord::Schema.define(version: 20150312211751) do
     t.boolean  "dns_secure"
     t.string   "dns_error"
     t.string   "dns_bogus"
-    t.string   "txt"
     t.datetime "updated_at"
   end
 
@@ -47,6 +46,15 @@ ActiveRecord::Schema.define(version: 20150312211751) do
   add_index "domains", ["mx_hosts"], name: "index_domains_on_mx_hosts", using: :btree
   add_index "domains", ["name"], name: "index_domains_on_name", unique: true, using: :btree
   add_index "domains", ["updated_at"], name: "index_domains_on_updated_at", using: :btree
+
+  create_table "mx_domains", force: :cascade do |t|
+    t.string   "name",       null: false
+    t.string   "txt"
+    t.datetime "updated_at"
+  end
+
+  add_index "mx_domains", ["name"], name: "index_mx_domains_on_name", unique: true, using: :btree
+  add_index "mx_domains", ["updated_at"], name: "index_mx_domains_on_updated_at", using: :btree
 
 # Could not dump table "mx_hosts" because of following StandardError
 #   Unknown type 'tls_version' for column 'tls_version'
