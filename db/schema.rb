@@ -17,20 +17,24 @@ ActiveRecord::Schema.define(version: 20150312211751) do
   enable_extension "plpgsql"
 
   create_table "certificates", force: :cascade do |t|
-    t.binary   "subject_id",       null: false
-    t.binary   "issuer_id",        null: false
-    t.binary   "key_id",           null: false
+    t.binary   "subject_id",           null: false
+    t.binary   "issuer_id",            null: false
+    t.binary   "key_id",               null: false
     t.integer  "key_size"
+    t.string   "signature_algorithm"
+    t.string   "public_key_algorithm"
     t.boolean  "is_ca"
     t.boolean  "is_valid"
     t.boolean  "is_self_signed"
     t.string   "validation_error"
-    t.datetime "first_seen_at",    null: false
+    t.datetime "first_seen_at",        null: false
   end
 
   add_index "certificates", ["issuer_id"], name: "index_certificates_on_issuer_id", using: :btree
   add_index "certificates", ["key_id"], name: "index_certificates_on_key_id", using: :btree
   add_index "certificates", ["key_size"], name: "index_certificates_on_key_size", using: :btree
+  add_index "certificates", ["public_key_algorithm"], name: "index_certificates_on_public_key_algorithm", using: :btree
+  add_index "certificates", ["signature_algorithm"], name: "index_certificates_on_signature_algorithm", using: :btree
   add_index "certificates", ["subject_id"], name: "index_certificates_on_subject_id", using: :btree
 
   create_table "domains", force: :cascade do |t|

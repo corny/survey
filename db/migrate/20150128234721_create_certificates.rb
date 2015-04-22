@@ -1,11 +1,13 @@
 class CreateCertificates < ActiveRecord::Migration
   def change
     create_table :certificates, id: false do |t|
-      t.binary :id,               null: false
-      t.binary :subject_id,       null: false, index: true
-      t.binary :issuer_id,        null: false, index: true
-      t.binary :key_id,           null: false, index: true
-      t.integer :key_size,                     index: true
+      t.binary  :id,                   null: false
+      t.binary  :subject_id,           null: false, index: true
+      t.binary  :issuer_id,            null: false, index: true
+      t.binary  :key_id,               null: false, index: true
+      t.integer :key_size,                          index: true
+      t.string  :key_algorithm,        null: false, index: true
+      t.string  :signature_algorithm,  null: false, index: true
       t.boolean :is_ca
       t.boolean :is_valid
       t.boolean :is_self_signed
