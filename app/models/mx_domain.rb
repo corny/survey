@@ -18,7 +18,19 @@ class MxDomain < ActiveRecord::Base
       f.puts "@ IN SOA master.example.com. hostmaster.example.com. ( #{options[:serial]} #{options[:refresh]} #{options[:retry]} #{options[:expire]} #{options[:ttl]} )"
 
       find_each do |mx_domain|
-        f.puts "#{mx_domain.name} TXT \"#{mx_domain.txt}\""
+        txt = [mx_domain.txt]
+
+        if txt[0].length > 255
+          # move fingerprints to second record
+          txt[0].gsub!(/ fingerprint=\S*/) do |fp|
+            txt << fp
+            ""
+          end
+        end
+
+        txt.each do |line|
+          f.puts "#{mx_domain.name} TXT \"#{line}\""
+        end
       end
     end
   end
