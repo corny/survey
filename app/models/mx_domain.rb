@@ -24,16 +24,10 @@ class MxDomain < ActiveRecord::Base
         txt = [mx_domain.txt]
 
         if txt[0].length > 255
-          # move fingerprints to second record
-          txt[0].gsub!(/ fingerprint=\S*/) do |fp|
-            txt << fp
-            ""
-          end
+          txt = txt[0].scan(/.{1,255}/)
         end
 
-        txt.each do |line|
-          f.puts "#{mx_domain.name} TXT \"#{line}\""
-        end
+        f.puts "#{mx_domain.name} TXT " << txt.map{|t| "\"#{t}\"" }.join(" ")
       end
     end
   end
