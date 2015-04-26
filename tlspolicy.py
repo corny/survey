@@ -12,8 +12,9 @@
 
 import argparse
 import os
-import SocketServer
+import time
 import dns.resolver
+import SocketServer
 
 class MapError(Exception):
   def __init__(self,code,reason):
@@ -111,9 +112,10 @@ class TlsPolicyHandler(Handler):
 
 class TlsPolicyMap(Handler):
 
-  def __init__(self, domain=None, mxResolver=None, txtResolver=None, certPinning=False):
+  def __init__(self, domain=None, mxResolver=None, txtResolver=None, certPinning=False, notBefore=None):
     self.domain       = domain
     self.certPinning  = certPinning
+    self.notBefore    = notBefore
     self.mxResolver   = dns.resolver.Resolver()
     self.txtResolver  = dns.resolver.Resolver()
 
@@ -128,14 +130,19 @@ class TlsPolicyMap(Handler):
       # Ignore empty txt records (unreachable hosts)
       txt_records = filter(None, txt_records)
 
-      # Always 'may' if none are reachable
+      # Always return 'may' if none are reachable
       if len(txt_records) == 0:
           return "may"
 
       for txt in txt_records:
+        # Convert key value pairs into a dict
         data = dict(s.split('=',2) for s in txt.split(" "))
 
-        if data["starttls"]!="true":
+        if data["starttls"] != "true":
+            return "may"
+
+        # Entry outdated?
+        if self.notBefore and int(data['updated']) < self.notBefore:
             return "may"
 
         if "fingerprint" in data:
@@ -189,14 +196,25 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='TLS Policy Map daemon using the socketmap protocol')
     parser.add_argument('--socket',      help='path to unix socket', default="/var/run/tlspolicy.sock")
     parser.add_argument('--domain',      help='domain for lookups',  default="tls-scan.informatik.uni-bremen.de")
-    parser.add_argument('--pinning',     help='use certificate pinning with fingerprints', action='store_true', default=false)
+    parser.add_argument('--pinning',     help='use certificate pinning with fingerprints', action='store_true', default=False)
     parser.add_argument('--mxresolver',  help='nameserver for MX lookups',  default="")
     parser.add_argument('--txtresolver', help='nameserver for TXT lookups', default="134.102.201.91")
-
+    parser.add_argument('--maxage',      help='maximum age of TXT records in seconds', type=int)
     args = parser.parse_args()
 
+    if args.maxage != None:
+      notBefore = time.time() - args.maxage
+    else:
+      notBefore = None
+
     # Set options
-    TlsPolicyHandler.tlsPolicy = TlsPolicy(domain=args.domain, mxResolver=args.mxresolver, txtResolver=args.txtresolver, certPinning=args.certPinning)
+    TlsPolicyHandler.tlsPolicy = TlsPolicyMap(
+      domain      = args.domain,
+      mxResolver  = args.mxresolver,
+      txtResolver = args.txtresolver,
+      certPinning = args.pinning,
+      notBefore   = notBefore
+    )
 
     # Start server
     Daemon(args.socket,TlsPolicyHandler).run()

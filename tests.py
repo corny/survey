@@ -22,6 +22,18 @@ class TestStringMethods(unittest2.TestCase):
         self.assertEqual(self.map(["starttls=false"]), 'may')
         self.assertEqual(self.map(["starttls=false",""]), 'may')
 
+    def test_timestamp(self):
+        policyMap = TlsPolicyMap(notBefore=123)
+
+        # not yet outdated
+        self.assertEqual(policyMap.map(["starttls=true updated=123"]), 'encrypt')
+
+        # outdated
+        self.assertEqual(policyMap.map(["starttls=true updated=122"]), 'may')
+
+        # only one outdated
+        self.assertEqual(policyMap.map(["starttls=true updated=130","starttls=true updated=120"]), 'may')
+
     def test_fingerprint(self):
         policyMap = TlsPolicyMap(certPinning=True)
         self.assertEqual(policyMap.map(["starttls=true"]), 'encrypt')
