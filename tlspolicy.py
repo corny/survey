@@ -102,37 +102,51 @@ class Daemon(object):
 
 class TlsPolicy(Handler):
 
-    domain   = None
-    resolver = dns.resolver.Resolver()
+    domain       = None
+    mxResolver   = dns.resolver.Resolver()
+    txtResolver  = dns.resolver.Resolver()
 
     # is called by handle()
     def _handle_tlspolicy(self,key):
         return TlsPolicy.resolve_and_map(key)
 
     @staticmethod
-    def map(txt):
-        data = dict(s.split('=') for s in txt.split(" "))
+    def map(txt_records):
+        fingerprints = []
 
-        if "certificate" in data:
-            certificate = data["certificate"].split(",")
-            if "trusted" in certificate:
-                if "match-domain" in certificate:
-                    return "secure"
-                if "match-mx" in certificate:
-                    return "verify"
+        for txt in txt_records:
+          data = dict(s.split('=') for s in txt.split(" "))
 
-        if data["starttls"]=="true":
-            return "encrypt"
-        else:
-            return "may"
+          # TODO respect all records
+
+          if "certificate" in data:
+              certificate = data["certificate"].split(",")
+              if "trusted" in certificate:
+                  if "match-domain" in certificate:
+                      return "secure"
+                  if "match-mx" in certificate:
+                      return "verify"
+
+          if data["starttls"]=="true":
+              return "encrypt"
+          else:
+              return "may"
 
     @staticmethod
     def resolve_and_map(nexthop):
         try:
-            query   = "%s.%s" % (nexthop, TlsPolicy.domain)
-            answers = TlsPolicy.resolver.query(query,'TXT')
+            # Query MX records
+            mx_records  = TlsPolicy.mxResolver.query(nexthop,'MX')
+            txt_records = []
 
-            return TlsPolicy.map(answers[0].strings[0])
+            # Query TXT records for the MX records
+            for mx in mx_records:
+                query   = "%s%s" % (mx.exchange, TlsPolicy.domain)
+                answers = TlsPolicy.txtResolver.query(query,'TXT')
+                txt_records.append("".join(answers[0].strings))
+
+            # Map TXT records to TLS policy
+            return TlsPolicy.map(txt_records)
 
         # In case of other results than "OK" postfix does a second
         # lookup for the parent domain.
@@ -142,20 +156,26 @@ class TlsPolicy(Handler):
             return "may"
         except dns.resolver.NoNameservers:
             return "may"
+        except dns.resolver.NXDOMAIN:
+            return "may"
+        except dns.resolver.NoAnswer:
+            return "may"
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='TLS Policy Map daemon using the socketmap protocol')
-    parser.add_argument('--socket',     help='path to unix socket', default="/var/run/tlspolicy.sock")
-    parser.add_argument('--domain',     help='domain for lookups',  default="tls-scan.informatik.uni-bremen.de")
-    parser.add_argument('--nameserver', help='nameserver to query', default="134.102.201.91")
+    parser.add_argument('--socket',      help='path to unix socket', default="/var/run/tlspolicy.sock")
+    parser.add_argument('--domain',      help='domain for lookups',  default="tls-scan.informatik.uni-bremen.de")
+    parser.add_argument('--mxresolver',  help='nameserver for MX lookups',  default="")
+    parser.add_argument('--txtresolver', help='nameserver for TXT lookups', default="134.102.201.91")
 
     args = parser.parse_args()
 
     # Set options
-    TlsPolicy.resolver.nameservers = [args.nameserver]
-    TlsPolicy.domain               = args.domain
+    TlsPolicy.mxResolver.nameservers  = [args.mxresolver]
+    TlsPolicy.txtResolver.nameservers = [args.txtresolver]
+    TlsPolicy.domain                  = args.domain
 
     # Start server
     Daemon(args.socket,TlsPolicy).run()
