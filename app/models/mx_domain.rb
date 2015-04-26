@@ -18,6 +18,9 @@ class MxDomain < ActiveRecord::Base
       f.puts "@ IN SOA master.example.com. hostmaster.example.com. ( #{options[:serial]} #{options[:refresh]} #{options[:retry]} #{options[:expire]} #{options[:ttl]} )"
 
       find_each do |mx_domain|
+        # invalid hostname?
+        next if mx_domain.name !~ /\A[a-z0-9\.\-_]+\z/
+
         txt = [mx_domain.txt]
 
         if txt[0].length > 255
