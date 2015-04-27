@@ -114,12 +114,12 @@ class TlsPolicyMap(Handler):
 
   DEFAULT_POLICY = "may"
 
-  def __init__(self, domain=None, mxResolver=None, txtResolver=None, certPinning=False, notBefore=None):
-    self.domain       = domain
-    self.certPinning  = certPinning
-    self.notBefore    = notBefore
-    self.mxResolver   = dns.resolver.Resolver()
-    self.txtResolver  = dns.resolver.Resolver()
+  def __init__(self, domain=None, mxResolver=None, txtResolver=None, pinning='never', notBefore=None):
+    self.domain      = domain
+    self.pinning     = pinning
+    self.notBefore   = notBefore
+    self.mxResolver  = dns.resolver.Resolver()
+    self.txtResolver = dns.resolver.Resolver()
 
     if txtResolver:
       self.txtResolver.nameservers = txtResolver.split(",")
@@ -155,7 +155,7 @@ class TlsPolicyMap(Handler):
         if "certificate-errors" in data:
             errors = True
 
-      if self.certPinning and len(fingerprints) > 0:
+      if (self.pinning=='always' or (errors and self.pinning=='on-errors')) and len(fingerprints) > 0:
         return "fingerprint " + " ".join(["match="+fp for fp in fingerprints])
 
       if errors:
@@ -198,7 +198,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='TLS Policy Map daemon using the socketmap protocol')
     parser.add_argument('--socket',      help='path to unix socket', default="/var/run/tlspolicy.sock")
     parser.add_argument('--domain',      help='domain for lookups',  default="tls-scan.informatik.uni-bremen.de")
-    parser.add_argument('--pinning',     help='use certificate pinning with fingerprints', action='store_true', default=False)
+    parser.add_argument('--pinning',     help='use certificate pinning with fingerprints', default='never', choices=['never','on-errors','always'])
     parser.add_argument('--mxresolver',  help='nameserver for MX lookups',  default="")
     parser.add_argument('--txtresolver', help='nameserver for TXT lookups', default="134.102.201.91")
     parser.add_argument('--maxage',      help='maximum age of TXT records in seconds', type=int)
@@ -212,9 +212,9 @@ if __name__ == "__main__":
     # Set options
     TlsPolicyHandler.tlsPolicy = TlsPolicyMap(
       domain      = args.domain,
+      pinning     = args.pinning,
       mxResolver  = args.mxresolver,
       txtResolver = args.txtresolver,
-      certPinning = args.pinning,
       notBefore   = notBefore
     )
 

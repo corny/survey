@@ -34,8 +34,13 @@ class TestMap(unittest2.TestCase):
         # only one outdated
         self.assertEqual(policyMap.map(["starttls=true updated=130","starttls=true updated=120"]), 'may')
 
-    def test_fingerprint(self):
-        policyMap = TlsPolicyMap(certPinning=True)
+    def test_pinning_on_errors(self):
+        policyMap = TlsPolicyMap(pinning='on-errors')
+        self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd"]), 'verify')
+        self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd certificate-errors=expired"]), 'fingerprint match=abcd')
+
+    def test_pinning_always(self):
+        policyMap = TlsPolicyMap(pinning='always')
         self.assertEqual(policyMap.map(["starttls=true"]), 'verify')
         self.assertEqual(policyMap.map(["starttls=true certificate-errors=expired"]), 'encrypt')
         self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd"]), 'fingerprint match=abcd')
@@ -48,6 +53,7 @@ class TestMap(unittest2.TestCase):
 
     def test_certificate_errors(self):
         self.assertEqual(self.map(["starttls=true certificate-errors=mismatch"]), 'encrypt')
+        self.assertEqual(self.map(["starttls=true certificate-errors=mismatch fingerprint=abcd"]), 'encrypt')
 
     # TODO Add DANE support
 
