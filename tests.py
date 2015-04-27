@@ -7,14 +7,14 @@
 import unittest2
 from tlspolicy import *
 
-class TestStringMethods(unittest2.TestCase):
+class TestMap(unittest2.TestCase):
 
     def map(self,txt):
         return TlsPolicyMap().map(txt)
 
     def test_starttls_true(self):
-        self.assertEqual(self.map(["starttls=true"]), 'encrypt')
-        self.assertEqual(self.map(["starttls=true",""]), 'encrypt')
+        self.assertEqual(self.map(["starttls=true"]), 'verify')
+        self.assertEqual(self.map(["starttls=true",""]), 'verify')
         self.assertEqual(self.map(["starttls=true","starttls=false"]), 'may')
 
     def test_starttls_false(self):
@@ -26,7 +26,7 @@ class TestStringMethods(unittest2.TestCase):
         policyMap = TlsPolicyMap(notBefore=123)
 
         # not yet outdated
-        self.assertEqual(policyMap.map(["starttls=true updated=123"]), 'encrypt')
+        self.assertEqual(policyMap.map(["starttls=true updated=123"]), 'verify')
 
         # outdated
         self.assertEqual(policyMap.map(["starttls=true updated=122"]), 'may')
@@ -36,22 +36,23 @@ class TestStringMethods(unittest2.TestCase):
 
     def test_fingerprint(self):
         policyMap = TlsPolicyMap(certPinning=True)
-        self.assertEqual(policyMap.map(["starttls=true"]), 'encrypt')
+        self.assertEqual(policyMap.map(["starttls=true"]), 'verify')
+        self.assertEqual(policyMap.map(["starttls=true certificate-errors=expired"]), 'encrypt')
         self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd"]), 'fingerprint match=abcd')
         self.assertEqual(policyMap.map(["starttls=true fingerprint=dead,beef"]), 'fingerprint match=dead match=beef')
         self.assertEqual(policyMap.map(["starttls=true fingerprint=dead,beef","starttls=true fingerprint=feed"]),
             'fingerprint match=dead match=beef match=feed')
 
-    def test_certificate_trusted_match_mx(self):
-        self.assertEqual(self.map(["starttls=true certificate=trusted,match-mx"]), 'verify')
+    def test_certificate_valid(self):
+        self.assertEqual(self.map(["starttls=true"]), 'verify')
 
-    def test_certificate_untrusted_match_mx(self):
-        self.assertEqual(self.map(["starttls=true certificate=trusted,match-domain"]), 'secure')
+    def test_certificate_errors(self):
+        self.assertEqual(self.map(["starttls=true certificate-errors=mismatch"]), 'encrypt')
 
     # TODO Add DANE support
 
 
-class TestMx(unittest2.TestCase):
+class TestResolve(unittest2.TestCase):
 
     def resolve_and_map(self,txt):
         policyMap = TlsPolicyMap(domain="tls-scan.informatik.uni-bremen.de", txtResolver="134.102.201.91")

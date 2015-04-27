@@ -112,6 +112,8 @@ class TlsPolicyHandler(Handler):
 
 class TlsPolicyMap(Handler):
 
+  DEFAULT_POLICY = "may"
+
   def __init__(self, domain=None, mxResolver=None, txtResolver=None, certPinning=False, notBefore=None):
     self.domain       = domain
     self.certPinning  = certPinning
@@ -125,42 +127,42 @@ class TlsPolicyMap(Handler):
       self.mxResolver.nameservers  = mxResolver.split(",")
 
   def map(self,txt_records):
-      fingerprints = []
-
       # Ignore empty txt records (unreachable hosts)
-      txt_records = filter(None, txt_records)
+      txt_records  = filter(None, txt_records)
+      fingerprints = []
+      errors       = []
 
       # Always return 'may' if none are reachable
       if len(txt_records) == 0:
-          return "may"
+          return self.DEFAULT_POLICY
 
       for txt in txt_records:
         # Convert key value pairs into a dict
         data = dict(s.split('=',2) for s in txt.split(" "))
 
         if data["starttls"] != "true":
-            return "may"
+            return self.DEFAULT_POLICY
 
         # Entry outdated?
         if self.notBefore and int(data['updated']) < self.notBefore:
-            return "may"
+            return self.DEFAULT_POLICY
 
+        # Add fingerprint to list
         if "fingerprint" in data:
             fingerprints.extend(data["fingerprint"].split(","))
 
         # TODO respect all records
-        if "certificate" in data:
-            certificate = data["certificate"].split(",")
-            if "trusted" in certificate:
-                if "match-domain" in certificate:
-                    return "secure"
-                if "match-mx" in certificate:
-                    return "verify"
+        if "certificate-errors" in data:
+            errors = True
 
       if self.certPinning and len(fingerprints) > 0:
         return "fingerprint " + " ".join(["match="+fp for fp in fingerprints])
 
-      return "encrypt"
+      if errors:
+        return "encrypt"
+      else:
+        return "verify"
+
 
   def resolve_and_map(self,nexthop):
       try:
