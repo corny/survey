@@ -19,6 +19,6 @@ $(document).on 'ready page:load', ->
           value: parseInt(text)
 
     # Draw chart
-    canvas = $("<canvas width=500 height=300></canvas>").insertAfter $dl
+    canvas = $("<canvas width=500 height=300></canvas>").insertBefore $dl
     ctx    = canvas[0].getContext('2d')
     new Chart(ctx).Pie(rows, {})
