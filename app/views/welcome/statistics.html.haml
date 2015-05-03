@@ -57,9 +57,3 @@
       - MxHost.where("tls_cipher_suite IS NOT NULL").select("tls_cipher_suite, COUNT(*) AS count").group(:tls_cipher_suite).order(:tls_cipher_suite).each do |record|
         %dt= record.tls_cipher_suite
         %dd= record.count
-
-%h2 Top Issuers
-%table.table.table-condensed.table-striped.table-hover
-  %tr
-  %tbody
-    = render partial: 'subject', collection: Stats.issuers

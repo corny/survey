@@ -140,8 +140,16 @@ module Stats
     MxRecord.with_address.select("address, COUNT(*) AS count").group(:address).order("count DESC").limit(limit)
   end
 
+  X509Name = Struct.new(:sha1,:count) do
+    def name
+      @name ||= Certificate.where(issuer_id: sha1).first!.x509.issuer
+    end
+  end
+
   def issuers(limit=50)
-    Certificate.select("min(id) AS id, issuer_id, count(*) AS count").group(:issuer_id).order("count DESC").limit(limit)
+    Certificate.select("issuer_id, count(*) AS count").group(:issuer_id).order("count DESC").limit(limit).map do |cert|
+      X509Name.new cert.issuer_id, cert.count
+    end
   end
 
   def select_int(sql)
