@@ -136,6 +136,10 @@ module Stats
     MxHost.where("tls_version IS NOT NULL").select("tls_version, COUNT(*) AS count").group(:tls_version).order(:tls_version)
   end
 
+  def certificate_field_count(field)
+    ActiveRecord::Base.connection.select_rows("SELECT #{field}, COUNT(*) AS count FROM certificates GROUP BY #{field} ORDER BY COUNT(*) DESC")
+  end
+
   def hostnames_per_address(limit=50)
     MxRecord.with_address.select("address, COUNT(*) AS count").group(:address).order("count DESC").limit(limit)
   end
@@ -146,7 +150,11 @@ module Stats
     end
   end
 
-  def issuers(limit=50)
+  def issuers_count
+    ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM (SELECT DISTINCT issuer_id FROM certificates) AS count");
+  end
+
+  def issuers(limit=100)
     Certificate.select("issuer_id, count(*) AS count").group(:issuer_id).order("count DESC").limit(limit).map do |cert|
       X509Name.new cert.issuer_id, cert.count
     end

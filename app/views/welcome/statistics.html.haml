@@ -30,6 +30,12 @@
       %dt unknown
       %dd= MxHost.where.not(certificate_id: nil).where(cert_valid: nil).count
 
+%dl.dl-horizontal.with-charts
+  %dt expired
+  %dd= MxHost.where(cert_expired: true).count
+  %dt not expired
+  %dd= MxHost.where(cert_expired: false).count
+
 %h2 MX-Records with certificates
 %dl.dl-horizontal.with-charts
   %dt valid an matching

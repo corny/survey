@@ -8,7 +8,8 @@ Rails.application.routes.draw do
   resources :domains, only: [:index, :show], constraints: {id: /[^\/]*/}
   resources :mx_hosts, only: :index
 
-  get 'statistics' => 'welcome#statistics'
-  get 'issuers'    => 'welcome#issuers'
+  get 'statistics'   => 'welcome#statistics'
+  get 'certificates' => 'welcome#certificates'
+  get 'issuers'      => 'welcome#issuers'
 
 end
