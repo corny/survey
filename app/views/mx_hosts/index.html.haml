@@ -1,13 +1,58 @@
-%h1 MX Hosts
-%table.table.table-condensed.table-striped.table-hover
-  %thead
-    %tr
-      %th Address
-      %th Hostname
-      %th TLS Version
-      %th Certificate
-  %tbody
-    = render @entries
+
+%h2 MX-Hosts
+.row
+  .col-md-6
+    %h3 STARTTLS support
+    %dl.dl-horizontal.with-charts
+      %dt supported
+      %dd= MxHost.where(starttls: true).count
+      %dt unsupported
+      %dd= MxHost.where(starttls: false).count
+      %dt unreachable
+      %dd= MxHost.where(starttls: nil).count
+  .col-md-6
+    %h3 Certificate Validity
+    %dl.dl-horizontal.with-charts
+      %dt valid
+      %dd= MxHost.where(cert_valid: true).count
+      %dt invalid
+      %dd= MxHost.where(cert_valid: false).count
+      %dt unknown
+      %dd= MxHost.where.not(certificate_id: nil).where(cert_valid: nil).count
+
+%dl.dl-horizontal.with-charts
+  %dt expired
+  %dd= MxHost.where(cert_expired: true).count
+  %dt not expired
+  %dd= MxHost.where(cert_expired: false).count
+
+%h2 MX-Records with certificates
+%dl.dl-horizontal.with-charts
+  %dt valid an matching
+  %dd= MxRecord.where(cert_matches: true).cert_valid(true).count
+
+  %dt valid an not matching
+  %dd= MxRecord.where(cert_matches: false).cert_valid(true).count
+
+  %dt invalid and matching
+  %dd= MxRecord.where(cert_matches: true).cert_valid(false).count
+
+  %dt invalid and not matching
+  %dd= MxRecord.where(cert_matches: false).cert_valid(false).count
+
+.row
+  .col-md-6
+    %h2 TLS Versions
+    %dl.dl-horizontal.with-charts.with-charts
+      - Stats.tls_versions.each do |record|
+        %dt= record.tls_version
+        %dd= record.count
+  .col-md-6
+    %h2 TLS Cipher Suites
+    %dl.with-charts
+      - MxHost.where("tls_cipher_suite IS NOT NULL").select("tls_cipher_suite, COUNT(*) AS count").group(:tls_cipher_suite).order(:tls_cipher_suite).each do |record|
+        %dt= record.tls_cipher_suite
+        %dd= record.count
 
 %h1 Hostnames per Address
 %ul
