@@ -6,13 +6,20 @@
   %dd= Certificate.count
 
 .row
-  - %w( is_valid is_self_signed is_ca key_algorithm signature_algorithm ).each do |field|
+  - %w( is_valid key_algorithm signature_algorithm ).each do |field|
     .col-md-6
       %h2= field.titleize
       %dl.dl-horizontal.with-charts.with-charts
         - Stats.certificate_field_count(field).each do |record|
           %dt= record[0]
           %dd= record[1]
+
+%h2 CA and Self-Signed
+%dl.with-charts
+  - [true, false].each do |b1|
+    - [true, false].each do |b2|
+      %dt CA=#{b1.inspect} Self-Signed=#{b2.inspect}
+      %dd= Certificate.where(is_self_signed: b1, is_ca: b2).count
 
 %h2 Validity Period
 
