@@ -11,6 +11,7 @@ class CreateMxHosts < ActiveRecord::Migration
       t.boolean :cert_expired, index: true
       t.binary  :certificate_id, index: true
       t.binary  :ca_certificate_ids, array: true, index: true
+      t.integer :dh_prime_size,                   index: true
       t.datetime :updated_at, null: false
     end
 

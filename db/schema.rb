@@ -70,6 +70,7 @@ ActiveRecord::Schema.define(version: 20150312211751) do
     t.boolean  "cert_expired"
     t.binary   "certificate_id"
     t.binary   "ca_certificate_ids",              array: true
+    t.integer  "dh_prime_size"
     t.datetime "updated_at",         null: false
   end
 
@@ -78,6 +79,7 @@ ActiveRecord::Schema.define(version: 20150312211751) do
   add_index "mx_hosts", ["cert_expired"], name: "index_mx_hosts_on_cert_expired", using: :btree
   add_index "mx_hosts", ["cert_valid"], name: "index_mx_hosts_on_cert_valid", using: :btree
   add_index "mx_hosts", ["certificate_id"], name: "index_mx_hosts_on_certificate_id", using: :btree
+  add_index "mx_hosts", ["dh_prime_size"], name: "index_mx_hosts_on_dh_prime_size", using: :btree
   add_index "mx_hosts", ["error"], name: "index_mx_hosts_on_error", using: :btree
   add_index "mx_hosts", ["tls_cipher_suites"], name: "index_mx_hosts_on_tls_cipher_suites", using: :btree
   add_index "mx_hosts", ["tls_versions"], name: "index_mx_hosts_on_tls_versions", using: :btree
