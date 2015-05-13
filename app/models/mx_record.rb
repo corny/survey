@@ -1,3 +1,5 @@
+require 'resolv'
+
 class MxRecord < ActiveRecord::Base
 
   has_one :mx_host,
@@ -27,6 +29,12 @@ class MxRecord < ActiveRecord::Base
 
   def cert_invalid_or_mismatches?
     cert_matches==false || cert_valid==false
+  end
+
+  def reverse_name
+    Resolv.getname address.to_s
+  rescue Resolv::ResolvError
+    raise unless $!.message.include?("no name")
   end
 
 end

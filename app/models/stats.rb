@@ -140,6 +140,16 @@ module Stats
     ActiveRecord::Base.connection.select_rows("SELECT #{field}, COUNT(*) AS count FROM certificates GROUP BY #{field} ORDER BY COUNT(*) DESC")
   end
 
+  def hostnames_per_address_with_names(limit=50)
+    hostnames_per_address(limit).map do |mx_record|
+      {
+        address: mx_record.address.to_s,
+        count: mx_record.count,
+        name: mx_record.reverse_name
+      }
+    end
+  end
+
   def hostnames_per_address(limit=50)
     MxRecord.with_address.select("address, COUNT(*) AS count").group(:address).order("count DESC").limit(limit)
   end
