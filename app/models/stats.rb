@@ -133,7 +133,11 @@ module Stats
   end
 
   def tls_versions
-    MxHost.where("tls_version IS NOT NULL").select("tls_version, COUNT(*) AS count").group(:tls_version).order(:tls_version)
+    MxHost.where("tls_versions IS NOT NULL").select("tls_versions, COUNT(*) AS count").group(:tls_versions).order(:tls_versions)
+  end
+
+  def tls_cipher_suites
+    MxHost.where("tls_cipher_suites IS NOT NULL").select("tls_cipher_suites, COUNT(*) AS count").group(:tls_cipher_suites).order(:tls_cipher_suites)
   end
 
   def certificate_field_count(field)

@@ -45,13 +45,13 @@
     %h2 TLS Versions
     %dl.dl-horizontal.with-charts.with-charts
       - Stats.tls_versions.each do |record|
-        %dt= record.tls_version
+        %dt= record.tls_version_names
         %dd= record.count
   .col-md-6
     %h2 TLS Cipher Suites
     %dl.with-charts
-      - MxHost.where("tls_cipher_suite IS NOT NULL").select("tls_cipher_suite, COUNT(*) AS count").group(:tls_cipher_suite).order(:tls_cipher_suite).each do |record|
-        %dt= record.tls_cipher_suite
+      - Stats.tls_cipher_suites.each do |record|
+        %dt= record.tls_cipher_suite_names
         %dd= record.count
 
 %h1 Hostnames per Address
