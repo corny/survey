@@ -5,8 +5,8 @@ class CreateMxHosts < ActiveRecord::Migration
       t.string :error, index: true
 
       t.boolean :starttls
-      t.column  :tls_version,      :tls_version,      index: true
-      t.column  :tls_cipher_suite, :tls_cipher_suite, index: true
+      t.binary  :tls_versions,      array: true, index: true
+      t.binary  :tls_cipher_suites, array: true, index: true
       t.boolean :cert_valid, index: true
       t.boolean :cert_expired, index: true
       t.binary  :certificate_id, index: true
