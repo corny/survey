@@ -1,4 +1,4 @@
-%h1 Statistics
+%h1 Certificates
 
 %h2 Total
 %dl.dl-horizontal
@@ -6,7 +6,7 @@
   %dd= Certificate.count
 
 .row
-  - %w( is_valid key_algorithm signature_algorithm ).each do |field|
+  - %w( is_valid signature_algorithm key_algorithm key_size ).each do |field|
     .col-md-6
       %h2= field.titleize
       %dl.dl-horizontal.with-charts.with-charts
