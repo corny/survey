@@ -22,19 +22,25 @@
             STARTTLS is available
     %tr
       %td
-        %code certificate
+        %code trusted
       %td
-        %p If a server certificate is present, a comma seperated list of the following values:
+        %p Comma separated list of trusted root certificate sets.
+        %ul
+          %li debian
+          %li ...
+
+    %tr
+      %td
+        %code certificate-problems
+      %td
+        %p If a server certificate is present, a comma seperated list of the certificate problems:
         %ul
           %li
-            %code trusted
-            The certificates is signed by a trusted anchor, it is not expired and has not been revoked.
+            %code expired
+            Expired or not yet valid.
           %li
-            %code match-mx
-            The common name or subject alt name matches the MX record.
-          %li
-            %code match-domain
-            The common name or subject alt name matches the recipient domain.
+            %code mismatch
+            The common name or subject alt name does not match the hostname.
     %tr
       %td
         %code dane

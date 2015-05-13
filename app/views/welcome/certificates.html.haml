@@ -10,7 +10,7 @@
     .col-md-6
       %h2= field.titleize
       %dl.dl-horizontal.with-charts.with-charts
-        - Stats.certificate_field_count(field).each do |record|
+        - Stats.field_count(:certificates, field).each do |record|
           %dt= record[0]
           %dd= record[1]
 
@@ -29,7 +29,7 @@
 
 - %w( validation_error ).each do |field|
   %table.table.table-condensed.table-striped.table-hover
-    - Stats.certificate_field_count(field).each do |record|
+    - Stats.field_count(:certificates, field).each do |record|
       %tr
         %td= record[1]
         %td= record[0]

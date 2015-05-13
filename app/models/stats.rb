@@ -140,8 +140,8 @@ module Stats
     MxHost.where("tls_cipher_suites IS NOT NULL").select("tls_cipher_suites, COUNT(*) AS count").group(:tls_cipher_suites).order(:tls_cipher_suites)
   end
 
-  def certificate_field_count(field)
-    ActiveRecord::Base.connection.select_rows("SELECT #{field}, COUNT(*) AS count FROM certificates GROUP BY #{field} ORDER BY COUNT(*) DESC")
+  def field_count(table, field)
+    ActiveRecord::Base.connection.select_rows("SELECT #{field}, COUNT(*) AS count FROM #{table} GROUP BY #{field} ORDER BY COUNT(*) DESC")
   end
 
   def hostnames_per_address_with_names(limit=50)
