@@ -41,19 +41,33 @@
   %dt invalid and not matching
   %dd= MxRecord.where(cert_matches: false).cert_valid(false).count
 
+%h2 TLS parameters
+
 .row
   .col-md-6
-    %h2 TLS Versions
+    %h3 TLS Versions
     %dl.dl-horizontal.with-charts.with-charts
       - Stats.tls_versions.each do |record|
-        %dt= record.tls_version_names
+        %dt= record.tls_version_names.join(",")
         %dd= record.count
   .col-md-6
-    %h2 TLS Cipher Suites
+    %h3 TLS Cipher Suites
     %dl.with-charts
       - Stats.tls_cipher_suites.each do |record|
-        %dt= record.tls_cipher_suite_names
+        %dt= record.tls_cipher_suite_names.join(",")
         %dd= record.count
+
+
+%h2 ECDHE parameters
+
+.row
+  - %w( curve_type curve_id key_size ).each do |key|
+    .col-md-6
+      %h3= key
+      %dl.dl-horizontal.with-charts.with-charts
+        - Stats.field_count(:mx_hosts, "ecdhe_#{key}").each do |record|
+          %dt= key=="curve_id" ? Curves.name(record[0]) : record[0]
+          %dd= record[1]
 
 
 %h2 Errors
