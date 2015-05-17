@@ -11,5 +11,6 @@ Rails.application.routes.draw do
   get 'statistics'   => 'welcome#statistics'
   get 'certificates' => 'welcome#certificates'
   get 'issuers'      => 'welcome#issuers'
+  get 'status'       => 'status#index'
 
 end
