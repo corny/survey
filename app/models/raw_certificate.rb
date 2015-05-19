@@ -65,19 +65,6 @@ class RawCertificate < ActiveRecord::Base
     subject.to_a.map{|a| a[1] if a[0]=='CN' }.compact
   end
 
-  def key_size
-    key = public_key
-    case key
-    when OpenSSL::PKey::RSA
-      key.n.num_bits
-    when OpenSSL::PKey::DSA
-      key.p.num_bits
-    when OpenSSL::PKey::EC
-      # don't know better
-      public_key.to_text.match(%r((\d+) bit))[1].to_i
-    end
-  end
-
   def key_type
     public_key.class.to_s.split("::").last
   end

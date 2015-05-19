@@ -1,18 +1,68 @@
 %h1 Trusted Root Certificates
 
-- roots = Stats.roots.to_a
+- roots = Roots.new
 
 %p
   = roots.count
   root certificates found.
+
+%h2 By Signature Algorithm
+
+%table.table.table-condensed.table-striped.table-hover
+  %thead
+    %tr
+      %th Signature Algorithm
+      %th Key Size
+      %th Root Certificates
+  %tbody
+    - roots.by_signature_and_keysize.each do |(signature_algorithm,key_size),certs|
+      %tr
+        %td= signature_algorithm
+        %td= key_size
+        %td= certs.count
+
+%h2 By Certificate
 
 %table.table.table-condensed.table-striped.table-hover
   %tbody
     %tr
       %th MX hosts
       %th Subject
+      %th Key Size
+      %th Signature Algorithm
+      %th Not before
+      %th Not after
   %tbody
     - roots.each do |cert|
       %tr
         %td= cert.count
-        %td= cert.subject
+        %td= cert.x509.subject
+        %td= cert.x509.key_size
+        %td= cert.x509.signature_algorithm
+        %td= cert.x509.not_before.to_date
+        %td= cert.x509.not_after.to_date
+
+%h2 By organization
+
+%table.table.table-condensed.table-striped.table-hover
+  %thead
+    %tr
+      %th Organization
+      %th Root-Certificates used/total
+      %th Hosts
+  %tbody
+    - roots.by_organization.each do |org,certs|
+      %tr
+        %td= org
+        %td
+          = certs.select{|c| c.count > 0 }.count
+          \/
+          = certs.count
+        %td= certs.map(&:count).sum
+  %tfoot
+    %td
+    %td
+      = roots.used.count
+      \/
+      = roots.count
+    %td
