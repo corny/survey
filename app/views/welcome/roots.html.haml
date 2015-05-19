@@ -33,10 +33,23 @@
       %th Not before
       %th Not after
   %tbody
+    - # FIXME: this is not DRY
     - roots.each do |cert|
       %tr
         %td= cert.count
         %td= cert.x509.subject
+        %td= cert.x509.key_size
+        %td= cert.x509.signature_algorithm
+        %td= cert.x509.not_before.to_date
+        %td= cert.x509.not_after.to_date
+    - roots.unassigned.each do |cert|
+      %tr.danger
+        %td= cert.count
+        %td
+          = cert.x509.subject
+          %br
+          SHA1:
+          %code= cert.x509.sha1
         %td= cert.x509.key_size
         %td= cert.x509.signature_algorithm
         %td= cert.x509.not_before.to_date

@@ -11,7 +11,7 @@ class Roots
   delegate :count, :each, to: :entries
 
   def initialize
-    stats = RawCertificate
+    @unassigned = RawCertificate
     .select("raw_certificates.id, raw_certificates.raw, count(*) AS count")
     .joins("INNER JOIN mx_hosts ON mx_hosts.root_certificate_id=raw_certificates.id")
     .group(:id)
@@ -21,12 +21,14 @@ class Roots
 
     @entries = Dir["/usr/share/ca-certificates/mozilla/*.crt"].map do |path|
       x509 = OpenSSL::X509::Certificate.new File.read(path)
-      Entry.new x509, stats.delete(x509.sha1(binary: true)).try(:count) || 0
+      Entry.new x509, @unassigned.delete(x509.sha1(binary: true)).try(:count) || 0
     end
 
-    raise "unassigned root certificates: #{stats.inspect}" if stats.any?
-
     @entries.sort_by!{|e| -e.count }
+  end
+
+  def unassigned
+    @unassigned.values
   end
 
   # Used certificates
