@@ -1,1 +1,0 @@
-{"host":"91.198.169.8","domain":"mxcluster1.one.com","time":"2015-02-08T18:00:38+01:00","log":[{"type":"connect","data":null,"error":null},{"type":"mail_banner","data":{"banner":"220 mx4.public.one.com ESMTP Halon Mail Gateway (H/OS)\r\n"},"error":null},{"type":"starttls","data":{"response":"502 5.5.1 Error: command not implemented\r\n"},"error":"Bad return code for STARTTLS"}]}
