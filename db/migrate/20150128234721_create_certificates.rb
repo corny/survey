@@ -9,9 +9,7 @@ class CreateCertificates < ActiveRecord::Migration
       t.string  :key_algorithm,        null: false, index: true
       t.string  :signature_algorithm,  null: false, index: true
       t.boolean :is_ca
-      t.boolean :is_valid
       t.boolean :is_self_signed
-      t.string :validation_error
       t.timestamp :first_seen_at, null: false
     end
 

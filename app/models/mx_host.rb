@@ -5,6 +5,7 @@ class MxHost < ActiveRecord::Base
     primary_key: :address
 
   belongs_to :certificate, foreign_key: :certificate_id, class_name: 'RawCertificate'
+  belongs_to :root_certificate, foreign_key: :root_certificate_id, class_name: 'RawCertificate'
 
   CIPHER_SUITES = YAML.load_file(Rails.root.join "config/cipher_suites.yml")
   TLS_VERSIONS = {

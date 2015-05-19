@@ -24,9 +24,7 @@ ActiveRecord::Schema.define(version: 20150312211751) do
     t.string   "key_algorithm",       null: false
     t.string   "signature_algorithm", null: false
     t.boolean  "is_ca"
-    t.boolean  "is_valid"
     t.boolean  "is_self_signed"
-    t.string   "validation_error"
     t.datetime "first_seen_at",       null: false
   end
 
@@ -61,30 +59,33 @@ ActiveRecord::Schema.define(version: 20150312211751) do
   add_index "mx_domains", ["updated_at"], name: "index_mx_domains_on_updated_at", using: :btree
 
   create_table "mx_hosts", force: :cascade do |t|
-    t.inet     "address",            null: false
+    t.inet     "address",             null: false
     t.string   "error"
     t.boolean  "starttls"
-    t.binary   "tls_versions",                    array: true
-    t.binary   "tls_cipher_suites",               array: true
-    t.boolean  "cert_valid"
+    t.binary   "tls_versions",                     array: true
+    t.binary   "tls_cipher_suites",                array: true
+    t.boolean  "cert_trusted"
     t.boolean  "cert_expired"
+    t.string   "cert_error"
     t.binary   "certificate_id"
-    t.binary   "ca_certificate_ids",              array: true
+    t.binary   "ca_certificate_ids",               array: true
+    t.binary   "root_certificate_id"
     t.integer  "ecdhe_curve_type"
     t.integer  "ecdhe_curve_id"
-    t.integer  "ecdhe_key_size"
-    t.datetime "updated_at",         null: false
+    t.datetime "updated_at",          null: false
   end
 
   add_index "mx_hosts", ["address"], name: "index_mx_hosts_on_address", unique: true, using: :btree
   add_index "mx_hosts", ["ca_certificate_ids"], name: "index_mx_hosts_on_ca_certificate_ids", using: :btree
+  add_index "mx_hosts", ["cert_error"], name: "index_mx_hosts_on_cert_error", using: :btree
   add_index "mx_hosts", ["cert_expired"], name: "index_mx_hosts_on_cert_expired", using: :btree
-  add_index "mx_hosts", ["cert_valid"], name: "index_mx_hosts_on_cert_valid", using: :btree
+  add_index "mx_hosts", ["cert_trusted"], name: "index_mx_hosts_on_cert_trusted", using: :btree
   add_index "mx_hosts", ["certificate_id"], name: "index_mx_hosts_on_certificate_id", using: :btree
   add_index "mx_hosts", ["ecdhe_curve_id"], name: "index_mx_hosts_on_ecdhe_curve_id", using: :btree
   add_index "mx_hosts", ["ecdhe_curve_type"], name: "index_mx_hosts_on_ecdhe_curve_type", using: :btree
-  add_index "mx_hosts", ["ecdhe_key_size"], name: "index_mx_hosts_on_ecdhe_key_size", using: :btree
   add_index "mx_hosts", ["error"], name: "index_mx_hosts_on_error", using: :btree
+  add_index "mx_hosts", ["root_certificate_id"], name: "index_mx_hosts_on_root_certificate_id", using: :btree
+  add_index "mx_hosts", ["starttls"], name: "index_mx_hosts_on_starttls", using: :btree
   add_index "mx_hosts", ["tls_cipher_suites"], name: "index_mx_hosts_on_tls_cipher_suites", using: :btree
   add_index "mx_hosts", ["tls_versions"], name: "index_mx_hosts_on_tls_versions", using: :btree
 
