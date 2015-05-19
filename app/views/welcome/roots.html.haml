@@ -1,0 +1,18 @@
+%h1 Trusted Root Certificates
+
+- roots = Stats.roots.to_a
+
+%p
+  = roots.count
+  root certificates found.
+
+%table.table.table-condensed.table-striped.table-hover
+  %tbody
+    %tr
+      %th MX hosts
+      %th Subject
+  %tbody
+    - roots.each do |cert|
+      %tr
+        %td= cert.count
+        %td= cert.subject

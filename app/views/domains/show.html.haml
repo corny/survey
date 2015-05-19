@@ -22,7 +22,7 @@
         %td= records.map(&:dnssec).uniq
         %td ...
         %td= records.map(&:cert_matches).uniq
-        %td= records.map(&:cert_valid).uniq
+        %td= records.map(&:cert_trusted).uniq
         %td= records.map{|r| r.valid_for_name?(@domain.name) }.uniq
 
 - @domain.mx_hosts.each do |name|
@@ -37,7 +37,7 @@
           %dt #{key}:
           %dd= host.send(key) || "—"
         - if host.starttls
-          - %w( tls_version tls_cipher_suite cert_valid certificate_id ).each do |key|
+          - %w( tls_version tls_cipher_suite cert_trusted certificate_id ).each do |key|
             %dt #{key}:
             %dd= host.send(key) || "—"
           - if host.certificate

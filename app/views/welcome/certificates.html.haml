@@ -6,7 +6,14 @@
   %dd= Certificate.count
 
 .row
-  - %w( is_valid signature_algorithm key_algorithm key_size ).each do |field|
+  .col-md-6
+    %h2 CA and Self-Signed
+    %dl.with-charts
+      - [true, false].each do |b1|
+        - [true, false].each do |b2|
+          %dt CA=#{b1.inspect} Self-Signed=#{b2.inspect}
+          %dd= Certificate.where(is_self_signed: b1, is_ca: b2).count
+  - %w( signature_algorithm key_algorithm key_size ).each do |field|
     .col-md-6
       %h2= field.titleize
       %dl.dl-horizontal.with-charts.with-charts
@@ -14,22 +21,7 @@
           %dt= record[0]
           %dd= record[1]
 
-%h2 CA and Self-Signed
-%dl.with-charts
-  - [true, false].each do |b1|
-    - [true, false].each do |b2|
-      %dt CA=#{b1.inspect} Self-Signed=#{b2.inspect}
-      %dd= Certificate.where(is_self_signed: b1, is_ca: b2).count
 
 %h2 Validity Period
 
 %span.badge TODO
-
-%h2 Validation Errors
-
-- %w( validation_error ).each do |field|
-  %table.table.table-condensed.table-striped.table-hover
-    - Stats.field_count(:certificates, field).each do |record|
-      %tr
-        %td= record[1]
-        %td= record[0]

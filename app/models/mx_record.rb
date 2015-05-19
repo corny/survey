@@ -11,11 +11,11 @@ class MxRecord < ActiveRecord::Base
   scope :with_error,      ->{ where "dnserr IS NOT null" }
   scope :without_error,   ->{ where "dnserr IS null" }
 
-  scope :cert_valid,      ->(bool){ where("EXISTS (SELECT * FROM mx_hosts WHERE address=mx_records.address AND cert_valid=" << (bool ? 'TRUE' : 'FALSE') << ")") }
+  scope :cert_trusted,      ->(bool){ where("EXISTS (SELECT * FROM mx_hosts WHERE address=mx_records.address AND cert_trusted=" << (bool ? 'TRUE' : 'FALSE') << ")") }
 
   delegate *%i(
     starttls
-    cert_valid
+    cert_trusted
   ), to: :mx_host
 
   def self.valid_address?(address)
@@ -28,7 +28,7 @@ class MxRecord < ActiveRecord::Base
   end
 
   def cert_invalid_or_mismatches?
-    cert_matches==false || cert_valid==false
+    cert_matches==false || cert_trusted==false
   end
 
   def reverse_name

@@ -1,45 +1,36 @@
 %h1 MX-Hosts
 
-.row
-  .col-md-6
-    %h3 STARTTLS support
-    %dl.dl-horizontal.with-charts
-      %dt supported
-      %dd= MxHost.where(starttls: true).count
-      %dt unsupported
-      %dd= MxHost.where(starttls: false).count
-      %dt unreachable
-      %dd= MxHost.where(starttls: nil).count
-  .col-md-6
-    %h3 Certificate Validity
-    %dl.dl-horizontal.with-charts
-      %dt valid
-      %dd= MxHost.where(cert_valid: true).count
-      %dt invalid
-      %dd= MxHost.where(cert_valid: false).count
-      %dt unknown
-      %dd= MxHost.where.not(certificate_id: nil).where(cert_valid: nil).count
-
-%h3 Expiration
+%h3 STARTTLS support
 %dl.dl-horizontal.with-charts
-  %dt expired
-  %dd= MxHost.where(cert_expired: true).count
-  %dt not expired
-  %dd= MxHost.where(cert_expired: false).count
+  %dt supported
+  %dd= MxHost.where(starttls: true).count
+  %dt unsupported
+  %dd= MxHost.where(starttls: false).count
+  %dt unreachable
+  %dd= MxHost.where(starttls: nil).count
+
+%h2 Certificates
+
+%h3 Trust and Expiration
+%dl.with-charts
+  - [true, false].each do |b1|
+    - [true, false].each do |b2|
+      %dt Trusted=#{b1.inspect} Expired=#{b2.inspect}
+      %dd= MxHost.where(cert_trusted: b1, cert_expired: b2).count
 
 %h2 MX-Records with certificates
 %dl.dl-horizontal.with-charts
   %dt valid an matching
-  %dd= MxRecord.where(cert_matches: true).cert_valid(true).count
+  %dd= MxRecord.where(cert_matches: true).cert_trusted(true).count
 
   %dt valid an not matching
-  %dd= MxRecord.where(cert_matches: false).cert_valid(true).count
+  %dd= MxRecord.where(cert_matches: false).cert_trusted(true).count
 
   %dt invalid and matching
-  %dd= MxRecord.where(cert_matches: true).cert_valid(false).count
+  %dd= MxRecord.where(cert_matches: true).cert_trusted(false).count
 
   %dt invalid and not matching
-  %dd= MxRecord.where(cert_matches: false).cert_valid(false).count
+  %dd= MxRecord.where(cert_matches: false).cert_trusted(false).count
 
 %h2 TLS parameters
 
@@ -61,7 +52,7 @@
 %h2 ECDHE parameters
 
 .row
-  - %w( curve_type curve_id key_size ).each do |key|
+  - %w( curve_type curve_id ).each do |key|
     .col-md-6
       %h3= key
       %dl.dl-horizontal.with-charts.with-charts

@@ -168,6 +168,10 @@ module Stats
     ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM (SELECT DISTINCT issuer_id FROM certificates) AS count");
   end
 
+  def roots(limit=100)
+    RawCertificate.select("raw_certificates.id, raw_certificates.raw, count(*) AS count").joins("INNER JOIN mx_hosts ON mx_hosts.root_certificate_id=raw_certificates.id").group(:id).order("count DESC")
+  end
+
   def issuers(limit=100)
     Certificate.select("issuer_id, count(*) AS count").group(:issuer_id).order("count DESC").limit(limit).map do |cert|
       X509Name.new cert.issuer_id, cert.count
