@@ -1,9 +1,12 @@
 class Roots
 
-  Entry = Struct.new(:x509, :count) do
+  Entry = Struct.new(:x509, :count, :missing) do
     delegate :subject, :key_size, :signature_algorithm, to: :x509
     def organization
       (subject["O"] || subject["CN"] || []).first
+    end
+    def intermediates
+      RawCertificate.where("id IN (SELECT DISTINCT unnest(chain_intermediate_ids) FROM mx_hosts WHERE chain_root_id='\\x#{x509.sha1}')")
     end
   end
 
@@ -22,6 +25,10 @@ class Roots
     @entries = Dir["/usr/share/ca-certificates/mozilla/*.crt"].map do |path|
       x509 = OpenSSL::X509::Certificate.new File.read(path)
       Entry.new x509, @unassigned.delete(x509.sha1(binary: true)).try(:count) || 0
+    end
+
+    @unassigned.each do |cert|
+      Entry.new cert.x509, cert.count, true
     end
 
     @entries.sort_by!{|e| -e.count }

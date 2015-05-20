@@ -4,7 +4,9 @@
 
 %p
   = roots.count
-  root certificates found.
+  root certificates found,
+  = roots.used.count
+  are in use.
 
 %h2 By Signature Algorithm
 
@@ -28,30 +30,26 @@
     %tr
       %th MX hosts
       %th Subject
-      %th Key Size
-      %th Signature Algorithm
+      %th Sub-CAs
+      %th Signature Algorithm <br> Key Size
       %th Not before
       %th Not after
   %tbody
     - # FIXME: this is not DRY
     - roots.each do |cert|
-      %tr
-        %td= cert.count
-        %td= cert.x509.subject
-        %td= cert.x509.key_size
-        %td= cert.x509.signature_algorithm
-        %td= cert.x509.not_before.to_date
-        %td= cert.x509.not_after.to_date
-    - roots.unassigned.each do |cert|
-      %tr.danger
-        %td= cert.count
+      %tr{ class: cert.missing ? "danger" : nil }
+        %td.text-right= cert.count
         %td
           = cert.x509.subject
           %br
-          SHA1:
-          %code= cert.x509.sha1
-        %td= cert.x509.key_size
-        %td= cert.x509.signature_algorithm
+          %code{title: 'SHA1 fingerprint'}= cert.x509.sha1
+          - if cert.missing
+            NOT in Mozilla store
+        %td.text-right= cert.intermediates.count
+        %td
+          = cert.x509.signature_algorithm
+          %br
+          = cert.x509.key_size
         %td= cert.x509.not_before.to_date
         %td= cert.x509.not_after.to_date
 
@@ -62,6 +60,7 @@
     %tr
       %th Organization
       %th Root-Certificates used/total
+      %th Sub-CAs
       %th Hosts
   %tbody
     - roots.by_organization.each do |org,certs|
@@ -71,6 +70,7 @@
           = certs.select{|c| c.count > 0 }.count
           \/
           = certs.count
+        %td= certs.map(&:intermediates).map(&:count).sum
         %td= certs.map(&:count).sum
   %tfoot
     %td
