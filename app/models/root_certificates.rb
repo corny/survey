@@ -21,6 +21,19 @@ class RootCertificates
     def countries
       certs.map{|c| c.subject["C"].try(:first) }.compact.uniq.join(", ")
     end
+
+    def to_h
+      {
+        name:          name,
+        hosts_count:   hosts_count,
+        intermediates: intermediates_count,
+        countries:     countries,
+        certificates: {
+          total: certs.count,
+          used:  used_count,
+        }
+      }
+    end
   end
 
   Entry = Struct.new(:x509, :count, :missing) do
@@ -30,6 +43,9 @@ class RootCertificates
     end
     def intermediates
       RawCertificate.where("id IN (SELECT DISTINCT unnest(chain_intermediate_ids) FROM mx_hosts WHERE chain_root_id='\\x#{x509.sha1}')")
+    end
+    def intermediates_count
+      intermediates.count
     end
   end
 

@@ -16,12 +16,16 @@
       %th Signature Algorithm
       %th Key Size
       %th Root Certificates
+      %th Sub CAs
+      %th MX Hosts
   %tbody
     - roots.by_signature_and_keysize.each do |(signature_algorithm,key_size),certs|
       %tr
         %td= signature_algorithm
         %td= key_size
         %td= certs.count
+        %td= certs.map(&:intermediates_count).sum
+        %td= certs.map(&:count).sum
 
 %h2 By organization
 
@@ -29,10 +33,10 @@
 %table.table.table-condensed.table-striped.table-hover
   %thead
     %tr
-      %th Hosts
+      %th MX Hosts
       %th Organization
-      %th Root-Certificates used/total
-      %th Sub-CAs
+      %th Root Certificates used/total
+      %th Sub CAs
       %th Country
   %tbody
     - by_organization.each do |org|
