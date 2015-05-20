@@ -12,7 +12,10 @@ class CreateMxHosts < ActiveRecord::Migration
       t.string  :cert_error,                     index: true
       t.binary  :certificate_id,                  index: true
       t.binary  :ca_certificate_ids, array: true, index: true # received itermediate/root certificates
-      t.binary  :root_certificate_id,             index: true # root certificate for a valid chain
+
+      t.binary  :chain_root_id,                       index: true # root certificate of a valid chain
+      t.binary  :chain_intermediate_ids, array: true, index: true # intermediate certificates of a valid chain
+
       t.integer :ecdhe_curve_type,                index: true
       t.integer :ecdhe_curve_id,                  index: true
       t.datetime :updated_at, null: false

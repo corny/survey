@@ -13,7 +13,7 @@ class Roots
   def initialize
     @unassigned = RawCertificate
     .select("raw_certificates.id, raw_certificates.raw, count(*) AS count")
-    .joins("INNER JOIN mx_hosts ON mx_hosts.root_certificate_id=raw_certificates.id")
+    .joins("INNER JOIN mx_hosts ON mx_hosts.chain_root_id=raw_certificates.id")
     .group(:id)
     .map do |cert|
       [cert.id, cert]
