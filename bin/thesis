@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+require_relative '../config/environment'
+
+dir = Rails.root.join("../diplom/data")
+
+# Root Certificates
+dir.join("tex/root_certs/organizations.yml").open("w") do |f|
+  f.puts RootCertificates.new.by_organization.map{|o| o.to_h.deep_stringify_keys }.to_yaml
+end
+
+dir.join("tex/root_certs/signature_algorithms.yml").open("w") do |f|
+  f.puts RootCertificates.new.by_organization.map{|o| o.to_h.deep_stringify_keys }.to_yaml
+end
