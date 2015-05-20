@@ -1,4 +1,27 @@
-class Roots
+class RootCertificates
+
+  ORG_MANGLE = YAML.load_file(Rails.root.join("config/ca_mangle.yml")).each do |h|
+    # Create case-insensitive Regexp instances
+    h['regex'] = Regexp.new(h['regex'],"i")
+  end
+
+  OrganizationGroup = Struct.new(:name, :certs) do
+    def hosts_count
+      certs.map(&:count).sum
+    end
+
+    def intermediates_count
+      certs.map(&:intermediates).map(&:count).sum
+    end
+
+    def used_count
+      certs.select{|c| c.count > 0 }.count
+    end
+
+    def countries
+      certs.map{|c| c.subject["C"].try(:first) }.compact.uniq.join(", ")
+    end
+  end
 
   Entry = Struct.new(:x509, :count, :missing) do
     delegate :subject, :key_size, :signature_algorithm, to: :x509
@@ -27,15 +50,11 @@ class Roots
       Entry.new x509, @unassigned.delete(x509.sha1(binary: true)).try(:count) || 0
     end
 
-    @unassigned.each do |cert|
+    @unassigned.values.each do |cert|
       Entry.new cert.x509, cert.count, true
     end
 
     @entries.sort_by!{|e| -e.count }
-  end
-
-  def unassigned
-    @unassigned.values
   end
 
   # Used certificates
@@ -47,9 +66,20 @@ class Roots
     @entries.group_by{|e| [e.signature_algorithm,e.key_size] }.sort_by{|key,_| key}
   end
 
+  def mangle_organization(name)
+    name.force_encoding("utf-8")
+    ORG_MANGLE.each do |h|
+      return h['name'] if name =~ h['regex']
+    end
+    name
+  end
+
   # grouped by organization and sorted descending by number of hosts
   def by_organization
-    @entries.group_by(&:organization).sort_by{|k,v| [-v.map(&:count).sum, k.downcase] }
+    @entries
+    .group_by{|e| mangle_organization(e.organization) }
+    .map{|name,certs| OrganizationGroup.new name, certs }
+    .sort_by{|grp| [-grp.hosts_count, grp.name.downcase] }
   end
 
 end

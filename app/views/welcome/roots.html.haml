@@ -1,6 +1,6 @@
 %h1 Trusted Root Certificates
 
-- roots = Roots.new
+- roots = RootCertificates.new
 
 %p
   = roots.count
@@ -23,6 +23,37 @@
         %td= key_size
         %td= certs.count
 
+%h2 By organization
+
+- by_organization = roots.by_organization
+%table.table.table-condensed.table-striped.table-hover
+  %thead
+    %tr
+      %th Hosts
+      %th Organization
+      %th Root-Certificates used/total
+      %th Sub-CAs
+      %th Country
+  %tbody
+    - by_organization.each do |org|
+      %tr
+        %td= org.hosts_count
+        %td= org.name
+        %td.text-center
+          = org.used_count
+          \/
+          = org.certs.count
+        %td= org.intermediates_count
+        %td= org.countries
+  %tfoot
+    %td{colspan: 2}
+    %td.text-center
+      = roots.used.count
+      \/
+      = roots.count
+    %td= by_organization.map(&:intermediates_count).sum
+    %td
+
 %h2 By Certificate
 
 %table.table.table-condensed.table-striped.table-hover
@@ -35,7 +66,6 @@
       %th Not before
       %th Not after
   %tbody
-    - # FIXME: this is not DRY
     - roots.each do |cert|
       %tr{ class: cert.missing ? "danger" : nil }
         %td.text-right= cert.count
@@ -52,30 +82,3 @@
           = cert.x509.key_size
         %td= cert.x509.not_before.to_date
         %td= cert.x509.not_after.to_date
-
-%h2 By organization
-
-%table.table.table-condensed.table-striped.table-hover
-  %thead
-    %tr
-      %th Organization
-      %th Root-Certificates used/total
-      %th Sub-CAs
-      %th Hosts
-  %tbody
-    - roots.by_organization.each do |org,certs|
-      %tr
-        %td= org
-        %td
-          = certs.select{|c| c.count > 0 }.count
-          \/
-          = certs.count
-        %td= certs.map(&:intermediates).map(&:count).sum
-        %td= certs.map(&:count).sum
-  %tfoot
-    %td
-    %td
-      = roots.used.count
-      \/
-      = roots.count
-    %td

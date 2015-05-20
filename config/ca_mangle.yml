@@ -1,0 +1,33 @@
+#
+# Mangle list for root certificate organizations
+#
+
+- regex: ac camerfirma
+  name:  AC Camerfirma
+
+- regex: comodo
+  name:  COMODO CA Limited
+
+- regex: entrust
+  name:  Entrust, Inc.
+
+- regex: digital signature trust
+  name:  Digital Signature Trust
+
+- regex: globalsign
+  name:  GlobalSign
+
+- regex: netlock
+  name:  NetLock Kft.
+
+- regex: secom trust
+  name:  SECOM Trust Systems CO.,LTD.
+
+- regex: go ?daddy
+  name:  Go Daddy
+
+- regex: thawte
+  name:  Thawte
+
+- regex: TÜRKTRUST
+  name:  TÜRKTRUST Bilgi İletişim
