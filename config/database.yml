@@ -80,5 +80,6 @@ test:
 #
 production:
   <<: *default
+  host: 91.202.40.218
   database: tlsscan
-  username:
+  username: tlsscan
