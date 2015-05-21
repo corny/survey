@@ -1,13 +1,16 @@
 #!/usr/bin/env ruby
 require_relative '../config/environment'
 
-dir = Rails.root.join("../diplom/data")
+def write_data(path,data)
+  file = Rails.root.join("data").join(path)
+  file.dirname.mkpath
+  file.open("w") do |f|
+    f.puts data.to_yaml
+  end
+end
 
 # Root Certificates
-dir.join("tex/root_certs/organizations.yml").open("w") do |f|
-  f.puts RootCertificates.new.by_organization.map{|o| o.to_h.deep_stringify_keys }.to_yaml
-end
+write_data \
+  "tex/root_certs/owners.yml",
+  RootCertificates.new.by_owner.map{|o| o.to_h.deep_stringify_keys }
 
-dir.join("tex/root_certs/signature_algorithms.yml").open("w") do |f|
-  f.puts RootCertificates.new.by_organization.map{|o| o.to_h.deep_stringify_keys }.to_yaml
-end

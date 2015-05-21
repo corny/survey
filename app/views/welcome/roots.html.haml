@@ -27,19 +27,19 @@
         %td= certs.map(&:intermediates_count).sum
         %td= certs.map(&:count).sum
 
-%h2 By organization
+%h2 By Owner
 
-- by_organization = roots.by_organization
+- by_owner = roots.by_owner
 %table.table.table-condensed.table-striped.table-hover
   %thead
     %tr
       %th MX Hosts
-      %th Organization
+      %th Owner
       %th Root Certificates used/total
       %th Sub CAs
       %th Country
   %tbody
-    - by_organization.each do |org|
+    - by_owner.each do |org|
       %tr
         %td= org.hosts_count
         %td= org.name
@@ -49,13 +49,14 @@
           = org.certs.count
         %td= org.intermediates_count
         %td= org.countries
+        %td= org.certs.map(&:expired_count).sum
   %tfoot
     %td{colspan: 2}
     %td.text-center
       = roots.used.count
       \/
       = roots.count
-    %td= by_organization.map(&:intermediates_count).sum
+    %td= by_owner.map(&:intermediates_count).sum
     %td
 
 %h2 By Certificate
