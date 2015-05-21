@@ -8,8 +8,9 @@ class CreateCertificates < ActiveRecord::Migration
       t.integer :key_size,                          index: true
       t.string  :key_algorithm,        null: false, index: true
       t.string  :signature_algorithm,  null: false, index: true
-      t.boolean :is_ca
-      t.boolean :is_self_signed
+      t.boolean :is_ca,                             index: true
+      t.boolean :is_self_signed,                    index: true
+      t.integer :days_valid,                        index: true
       t.timestamp :first_seen_at, null: false
     end
 

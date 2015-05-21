@@ -25,9 +25,13 @@ ActiveRecord::Schema.define(version: 20150312211751) do
     t.string   "signature_algorithm", null: false
     t.boolean  "is_ca"
     t.boolean  "is_self_signed"
+    t.integer  "days_valid"
     t.datetime "first_seen_at",       null: false
   end
 
+  add_index "certificates", ["days_valid"], name: "index_certificates_on_days_valid", using: :btree
+  add_index "certificates", ["is_ca"], name: "index_certificates_on_is_ca", using: :btree
+  add_index "certificates", ["is_self_signed"], name: "index_certificates_on_is_self_signed", using: :btree
   add_index "certificates", ["issuer_id"], name: "index_certificates_on_issuer_id", using: :btree
   add_index "certificates", ["key_algorithm"], name: "index_certificates_on_key_algorithm", using: :btree
   add_index "certificates", ["key_id"], name: "index_certificates_on_key_id", using: :btree
