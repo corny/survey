@@ -15,17 +15,20 @@
     %tr
       %th Signature Algorithm
       %th Key Size
-      %th Root Certificates
+      %th.text-center Root Certificates <br> used/total
       %th Sub CAs
       %th MX Hosts
   %tbody
-    - roots.by_signature_and_keysize.each do |(signature_algorithm,key_size),certs|
+    - roots.by_signatures_keys.each do |row|
       %tr
-        %td= signature_algorithm
-        %td= key_size
-        %td= certs.count
-        %td= certs.map(&:intermediates_count).sum
-        %td= certs.map(&:count).sum
+        %td= row.signature_algorithm
+        %td= row.key_size
+        %td.text-center
+          = row.used_count
+          \/
+          = row.certs.count
+        %td= row.intermediates_count
+        %td= row.hosts_count
 
 %h2 By Owner
 
@@ -34,7 +37,7 @@
   = link_to "Mozilla Included CA Certificate List", "https://wiki.mozilla.org/CA:IncludedCAs"
   \,
 
-- by_owner = roots.by_owner
+- by_owners = roots.by_owners
 %table.table.table-condensed.table-striped.table-hover
   %thead
     %tr
@@ -45,24 +48,24 @@
       %th Sub CAs
       %th Country
   %tbody
-    - by_owner.each do |org|
+    - by_owners.each do |row|
       %tr
-        %td.text-right= org.hosts_count
-        %td.text-right= org.expired_ratio ? sprintf("%0.2f \%", org.expired_ratio*100) : "-"
-        %td= org.name
+        %td.text-right= row.hosts_count
+        %td.text-right= row.expired_ratio ? sprintf("%0.2f \%", row.expired_ratio*100) : "-"
+        %td= row.owner
         %td.text-center
-          = org.used_count
+          = row.used_count
           \/
-          = org.certs.count
-        %td= org.intermediates_count
-        %td= org.countries
+          = row.certs.count
+        %td= row.intermediates_count
+        %td= row.countries
   %tfoot
     %td{colspan: 3}
     %td.text-center
       = roots.used.count
       \/
       = roots.count
-    %td= by_owner.map(&:intermediates_count).sum
+    %td= by_owners.map(&:intermediates_count).sum
     %td
 
 %h2 By Certificate

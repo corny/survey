@@ -3,11 +3,19 @@ require 'csv'
 class RootCertificates
 
   # Map from SHA1 fingerprint to owner
-  def self.builtin
+  def self.sha1_owners
     # source: https://docs.google.com/spreadsheet/ccc?key=0Ah-tHXMAwqU3dGx0cGFObG9QM192NFM4UWNBMlBaekE&usp=sharing
-    @builtin ||= parse_csv(Rails.root.join("config/mozilla_CAs.csv")).map do |row|
+    @sha1_owners ||= mozilla_list.map do |row|
       [row["SHA-1 Fingerprint"].gsub(":","").downcase, row["Owner"]]
     end.to_h
+  end
+
+  def self.owners
+    mozilla_list.map{|row| row["Owner"] }.uniq
+  end
+
+  def self.mozilla_list
+    @CAs ||= parse_csv Rails.root.join("config/mozilla_CAs.csv")
   end
 
   def self.parse_csv(file)
@@ -18,7 +26,28 @@ class RootCertificates
     rows
   end
 
-  OwnerGroup = Struct.new(:name, :certs) do
+  def self.common_stats
+    {
+      owners: owners.count,
+      in_nss: mozilla_list.select{|row| row["NSS Release When First Included"].present? }.count,
+    }
+  end
+
+  class Group
+    attr_reader :certs
+
+    def initialize(certs, keys)
+      @certs = certs
+      @keys  = keys
+    end
+
+    def method_missing(m, *args, &block)
+      if v = @keys[m]
+        return v
+      end
+      super
+    end
+
     def hosts_count
       certs.map(&:count).sum
     end
@@ -48,8 +77,7 @@ class RootCertificates
     end
 
     def to_h
-      {
-        name:          name,
+      @keys.merge(
         countries:     countries,
         intermediates: intermediates_count,
         hosts:         hosts_count,
@@ -58,14 +86,14 @@ class RootCertificates
           total: certs.count,
           used:  used_count,
         }
-      }
+      )
     end
   end
 
   Entry = Struct.new(:x509, :count, :expired_count, :missing) do
     delegate :subject, :key_size, :signature_algorithm, to: :x509
     def owner
-      RootCertificates.builtin[x509.sha1] || x509_owner
+      RootCertificates.sha1_owners[x509.sha1] || x509_owner
     end
     def x509_owner
       (subject["O"] || subject["CN"] || []).first
@@ -108,16 +136,19 @@ class RootCertificates
     @entries.select{|e| e.count > 0 }
   end
 
-  def by_signature_and_keysize
-    @entries.group_by{|e| [e.signature_algorithm,e.key_size] }.sort_by{|key,_| key}
+  def by_signatures_keys
+    @entries
+    .group_by{|e| [e.signature_algorithm,e.key_size] }
+    .sort_by{|key,_| key}
+    .map{|key,certs| Group.new(certs, signature_algorithm: key[0], key_size: key[1])}
   end
 
   # grouped by owner and sorted descending by number of hosts
-  def by_owner
+  def by_owners
     @entries
     .group_by(&:owner)
-    .map{|name,certs| OwnerGroup.new name, certs }
-    .sort_by{|grp| [-grp.hosts_count, grp.name.downcase] }
+    .map{|owner,certs| Group.new certs, owner: owner }
+    .sort_by{|grp| [-grp.hosts_count, grp.owner.downcase] }
   end
 
 end

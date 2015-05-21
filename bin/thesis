@@ -10,7 +10,9 @@ def write_data(path,data)
 end
 
 # Root Certificates
-write_data \
-  "tex/root_certs/owners.yml",
-  RootCertificates.new.by_owner.map{|o| o.to_h.deep_stringify_keys }
-
+roots = RootCertificates.new
+%w( owners signatures_keys ).each do |key|
+  write_data \
+    "tex/root_certs/#{key}.yml",
+    roots.send("by_#{key}").map{|o| o.to_h.deep_stringify_keys }
+end
