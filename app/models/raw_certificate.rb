@@ -8,7 +8,7 @@ class RawCertificate < ActiveRecord::Base
     to: :x509
 
   scope :fingerprint, ->(val) do
-    where "sha1_fingerprint=E?", "\\\\x#{val}"
+    where "id=E?", "\\\\x#{val}"
   end
 
   has_one :certificate,
@@ -21,12 +21,11 @@ class RawCertificate < ActiveRecord::Base
       cert = fingerprint(bin2hex(sha1)).first
       unless cert
         cert = create! \
-          sha1_fingerprint: sha1,
-          raw:              x509.to_der.force_encoding('binary')
+          id:   sha1,
+          raw:  x509.to_der.force_encoding('binary')
 
         Certificate.create! \
-          id:               cert.id,
-          sha1_fingerprint: sha1,
+          id:               sha1,
           issuer_id:        x509.issuer.hash,
           subject_id:       x509.subject.hash,
           key_id:           x509.public_key.hash,

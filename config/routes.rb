@@ -14,4 +14,6 @@ Rails.application.routes.draw do
   get 'roots'        => 'welcome#roots'
   get 'status'       => 'status#index'
 
+  resources :certificates, only: [:show]
+
 end

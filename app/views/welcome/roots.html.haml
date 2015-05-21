@@ -29,6 +29,11 @@
 
 %h2 By Owner
 
+%p
+  Owners are taken from the
+  = link_to "Mozilla Included CA Certificate List", "https://wiki.mozilla.org/CA:IncludedCAs"
+  \,
+
 - by_owner = roots.by_owner
 %table.table.table-condensed.table-striped.table-hover
   %thead
@@ -78,7 +83,8 @@
         %td
           = cert.x509.subject
           %br
-          %code{title: 'SHA1 fingerprint'}= cert.x509.sha1
+          = link_to certificate_path(cert.x509.sha1) do
+            %code{title: 'SHA1 fingerprint'}= cert.x509.sha1
           - if cert.missing
             NOT in Mozilla store
         %td.text-right= cert.intermediates.count
