@@ -27,6 +27,14 @@ class RootCertificates
       certs.map(&:expired_count).sum
     end
 
+    def expired_ratio
+      if (count = hosts_count) > 0
+        hosts_expired_count.to_f / hosts_count
+      else
+        nil
+      end
+    end
+
     def intermediates_count
       certs.map(&:intermediates).map(&:count).sum
     end
@@ -44,10 +52,8 @@ class RootCertificates
         name:          name,
         countries:     countries,
         intermediates: intermediates_count,
-        hosts: {
-          total:   hosts_count,
-          expired: hosts_expired_count,
-        },
+        hosts:         hosts_count,
+        expired:       expired_ratio,
         certificates: {
           total: certs.count,
           used:  used_count,

@@ -33,15 +33,17 @@
 %table.table.table-condensed.table-striped.table-hover
   %thead
     %tr
-      %th MX Hosts
+      %th.text-right MX Hosts
+      %th.text-center{ title: "Expired host certificates" } Expired <br> Certificates
       %th Owner
-      %th Root Certificates used/total
+      %th.text-center Root Certificates <br> used/total
       %th Sub CAs
       %th Country
   %tbody
     - by_owner.each do |org|
       %tr
-        %td= org.hosts_count
+        %td.text-right= org.hosts_count
+        %td.text-right= org.expired_ratio ? sprintf("%0.2f \%", org.expired_ratio*100) : "-"
         %td= org.name
         %td.text-center
           = org.used_count
@@ -49,9 +51,8 @@
           = org.certs.count
         %td= org.intermediates_count
         %td= org.countries
-        %td= org.certs.map(&:expired_count).sum
   %tfoot
-    %td{colspan: 2}
+    %td{colspan: 3}
     %td.text-center
       = roots.used.count
       \/
