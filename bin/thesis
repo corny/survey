@@ -16,3 +16,6 @@ roots = RootCertificates.new
     "tex/root_certs/#{key}.yml",
     roots.send("by_#{key}").map{|o| o.to_h.deep_stringify_keys }
 end
+
+write_data \
+  "tex/issuers/data.yml", Stats.issuers(20).map{|o| o.to_h.deep_stringify_keys }

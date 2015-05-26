@@ -160,12 +160,51 @@ module Stats
 
   X509Name = Struct.new(:sha1,:count) do
     def name
-      @name ||= Certificate.where(issuer_id: sha1).first!.x509.issuer
+      @name ||= certificates.first!.x509.issuer
+    end
+
+    def to_h
+      h = {
+        certificates: count,
+        name:         name.to_s,
+      }
+      %w( days_valid trusted_hosts_ratio expired_hosts_ratio ).inject(h) do |h,key|
+        h[key] = send(key)
+        h
+      end
+    end
+
+    def days_valid
+      @days_valid ||= begin
+        row = certificates.pluck("AVG(days_valid), stddev_samp(days_valid)")[0]
+        {
+          mean:   row[0].to_f,
+          stddev: row[1].to_f
+        }
+      end
+    end
+
+    def mx_stats
+      @mx_stats ||= MxHost
+      .where("certificate_id IN (SELECT id FROM certificates WHERE issuer_id=E?)", "\\\\x" << sha1.unpack('H*')[0])
+      .select("COUNT(CASE WHEN cert_expired THEN 1 ELSE null END) AS expired, COUNT(CASE WHEN cert_trusted THEN 1 ELSE null END) AS trusted, COUNT(*) AS count")[0]
+    end
+
+    def expired_hosts_ratio
+      @expired ||= mx_stats.expired.to_f / mx_stats.count
+    end
+
+    def trusted_hosts_ratio
+      @trusted ||= mx_stats.trusted.to_f / mx_stats.count
+    end
+
+    def certificates
+      Certificate.where(issuer_id: sha1)
     end
   end
 
   def issuers_count
-    ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM (SELECT DISTINCT issuer_id FROM certificates) AS count");
+    ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM (SELECT DISTINCT issuer_id FROM certificates) AS count")
   end
 
   def roots(limit=100)
