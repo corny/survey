@@ -170,7 +170,7 @@ module Stats
     def to_h
       h = {
         certificates: count,
-        name:         name.to_s,
+        name:         name.to_a.map{|a,b| [a,b] }.to_h,
       }
       %w( days_valid_mean days_valid_median trusted_hosts_ratio expired_hosts_ratio ).inject(h) do |h,key|
         h[key] = send(key)
