@@ -195,7 +195,7 @@ module Stats
     end
 
     def days_valid_mean
-      row = certificates.pluck("AVG(days_valid), stddev_samp(days_valid)")[0]
+      row = certificates.pluck("AVG(days_valid), STDDEV_POP(days_valid)")[0]
       {
         mean:   row[0].to_f,
         stddev: row[1].to_f
