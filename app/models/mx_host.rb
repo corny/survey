@@ -23,4 +23,27 @@ class MxHost < ActiveRecord::Base
     tls_cipher_suites.map{|v| CIPHER_SUITES[v.unpack('n').first] || v }
   end
 
+  def self.errors
+    errors = {}
+    select("error, count(*) AS count")
+    .group(:error)
+    .each do |row|
+      error = row['error']
+      error = case error
+      when /^tls: received record with version (\d+) when expecting version (\d+)/
+        "tls: received record with version ... when expecting version ..."
+      when /oversized record received with length \d+/
+        "tls: oversized record received with length ..."
+      when /^tls: failed to parse certificate from server/
+        "tls: failed to parse certificate from server: ..."
+      else
+        error
+      end
+
+      errors[error] ||= 0
+      errors[error] +=  row['count']
+    end
+    errors.sort_by{|_,v| -v}
+  end
+
 end

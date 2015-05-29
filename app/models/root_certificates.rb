@@ -1,6 +1,8 @@
 require 'csv'
+require 'singleton'
 
 class RootCertificates
+  include Singleton
 
   # Map from SHA1 fingerprint to owner
   def self.sha1_owners

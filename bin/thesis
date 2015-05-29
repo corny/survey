@@ -1,21 +1,31 @@
 #!/usr/bin/env ruby
 require_relative '../config/environment'
 
-def write_data(path,data)
-  file = Rails.root.join("data").join(path)
+def write_data(path,proc)
+  if ARGV.any? && !ARGV.include?(path)
+    STDERR.puts "skipping #{path}"
+    return
+  end
+  data = proc.call
+  if data.respond_to?(:to_h)
+    data = data.to_h.deep_stringify_keys
+  else
+    data = data.map{|o| o.to_h.deep_stringify_keys }
+  end
+
+  file = Rails.root.join("data/tex").join(path,"data.yml")
   file.dirname.mkpath
   file.open("w") do |f|
     f.puts data.to_yaml
   end
 end
 
+write_data "vars", ->{ Vars }
+write_data "mx_errors", ->{ MxHost.errors }
+
 # Root Certificates
-roots = RootCertificates.new
 %w( owners signatures_keys ).each do |key|
-  write_data \
-    "tex/root_certs/#{key}.yml",
-    roots.send("by_#{key}").map{|o| o.to_h.deep_stringify_keys }
+  write_data "root_#{key}", ->{ RootCertificates.instance.send("by_#{key}").to_h }
 end
 
-write_data \
-  "tex/issuers/data.yml", Stats.issuers(20).map{|o| o.to_h.deep_stringify_keys }
+write_data "issuers", ->{ Stats.issuers(20).map{|o| o.to_h.deep_stringify_keys } }
