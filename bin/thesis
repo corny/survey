@@ -6,26 +6,34 @@ def write_data(path,proc)
     STDERR.puts "skipping #{path}"
     return
   end
+
+  puts "building #{path}"
+
   data = proc.call
-  if data.respond_to?(:to_h)
+  if Array === data
+    data = data.map{|o| o.deep_stringify_keys }
+  elsif data.respond_to?(:to_h)
     data = data.to_h.deep_stringify_keys
-  else
-    data = data.map{|o| o.to_h.deep_stringify_keys }
   end
 
-  file = Rails.root.join("data/tex").join(path,"data.yml")
+  data = data.to_yaml unless String === data
+
+  file = Rails.root.join("data").join(path,"data.yml")
   file.dirname.mkpath
   file.open("w") do |f|
-    f.puts data.to_yaml
+    f.puts data
   end
 end
 
-write_data "vars", ->{ Vars }
-write_data "mx_errors", ->{ MxHost.errors }
+write_data "tex/vars",       ->{ Vars }
+write_data "tex/mx_charts",  ->{ Stats.mx_charts(50) }
+write_data "tex/mx_errors",  ->{ MxHost.errors.to_h }
+write_data "tex/mx_records", ->{ Stats.mx_address_stats }
+write_data "images/mxcount", ->{ Stats.mx_counts.to_yaml }
 
 # Root Certificates
 %w( owners signatures_keys ).each do |key|
-  write_data "root_#{key}", ->{ RootCertificates.instance.send("by_#{key}").to_h }
+  write_data "tex/root_#{key}", ->{ RootCertificates.instance.send("by_#{key}").map(&:to_h) }
 end
 
-write_data "issuers", ->{ Stats.issuers(20).map{|o| o.to_h.deep_stringify_keys } }
+write_data "tex/issuers", ->{ Stats.issuers(20).map(&:to_h) }

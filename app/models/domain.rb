@@ -7,8 +7,8 @@ class Domain < ActiveRecord::Base
 
   scope :with_mx,       ->{ where 'ARRAY_LENGTH(mx_hosts,1) > 0' }
   scope :without_mx,    ->{ where 'ARRAY_LENGTH(mx_hosts,1) IS NULL' }
-  scope :with_error,    ->{ where 'error IS NOT NULL' }
-  scope :without_error, ->{ where 'error IS NULL' }
+  scope :with_error,    ->{ where 'dns_error IS NOT NULL' }
+  scope :without_error, ->{ where 'dns_error IS NULL' }
 
   def valid_mx?
     mx_hosts.any?{|name| ICANN.fqdn?(name) }

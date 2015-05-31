@@ -8,8 +8,8 @@ class MxRecord < ActiveRecord::Base
 
   scope :with_address,    ->{ where "address IS NOT null" }
   scope :without_address, ->{ where "address IS null" }
-  scope :with_error,      ->{ where "dnserr IS NOT null" }
-  scope :without_error,   ->{ where "dnserr IS null" }
+  scope :with_error,      ->{ where "dns_error IS NOT null" }
+  scope :without_error,   ->{ where "dns_error IS null" }
 
   scope :cert_trusted,      ->(bool){ where("EXISTS (SELECT * FROM mx_hosts WHERE address=mx_records.address AND cert_trusted=" << (bool ? 'TRUE' : 'FALSE') << ")") }
 

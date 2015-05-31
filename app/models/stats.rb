@@ -18,7 +18,7 @@ module Stats
   MANGLE_DOMAINS_MAP = MANGLE.inject({}){|h,f| f['domains'].each{|d| h[d] = f['name'] }; h }
 
   def domains
-    result = Hash[Domain.select("error, COUNT(*) AS count").with_error.group(:error).map{|r| [r.error, r.count] }]
+    result = Hash[Domain.select("dns_error, COUNT(*) AS count").with_error.group(:dns_error).map{|r| [r.dns_error, r.count] }]
     result.merge! \
       with_mx:    domains_mx_stats,
       without_mx: Domain.without_mx.without_error.count
@@ -37,7 +37,10 @@ module Stats
 
   # Anzahl Hosts pro Anzahl MX-Einträge
   def mx_counts
-    Hash[Domain.select("COALESCE(array_length(mx_hosts,1),0) AS len, count(*) AS count").group(:len).map{|r| [r.len, r.count] }]
+    ActiveRecord::Base.connection
+    .select_rows("SELECT COALESCE(array_length(mx_hosts,1),0) AS len, count(*) AS count FROM domains GROUP BY len ORDER BY len")
+    .map{|row| row.map(&:to_i) }
+    .to_h
   end
 
   def domains_mx_stats
@@ -92,8 +95,8 @@ module Stats
 
     result = {
       # Gesamtzahl von Hostnamen
-      host_count:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records"),
-      host_with_ip: select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records WHERE address IS NOT null"),
+      host_count:   MxRecord.count("DISTINCT(hostname)"),
+      host_with_ip: MxRecord.with_address.count("DISTINCT(hostname)"),
 
       # Anzahl eindeutiger IP-Adressen
       ip_count:  addresses.count,
@@ -107,8 +110,8 @@ module Stats
 
     # Anteil X an Gesamtzahl der Hostnamen
     {
-      without_ip:  MxRecord.without_address.without_error.count,
       servfail:    MxRecord.without_address.with_error.count,
+      without_ip:  MxRecord.without_address.without_error.count,
       ipv4_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records AS outer_hosts WHERE family(address)=4 AND NOT EXISTS (SELECT 1 FROM mx_records WHERE hostname=outer_hosts.hostname AND family(address)=6)"),
       ipv6_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records AS outer_hosts WHERE family(address)=6 AND NOT EXISTS (SELECT 1 FROM mx_records WHERE hostname=outer_hosts.hostname AND family(address)=4)"),
       ipv4and6:    select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records AS outer_hosts WHERE family(address)=6 AND     EXISTS (SELECT 1 FROM mx_records WHERE hostname=outer_hosts.hostname AND family(address)=4)"),

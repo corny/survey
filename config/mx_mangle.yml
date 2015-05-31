@@ -8,14 +8,14 @@
   - googlemail.com
   - psmtp.com
 
-- name: Microsoft
+- name: Microsoft Corporation
   country: us
   domains:
   - outlook.com
   - live.com
   - hotmail.com
 
-- name: Symantec
+- name: Symantec Corporation
   country: us
   domains:
   - messagelabs.com
@@ -47,12 +47,12 @@
   domains:
   - emailsrvr.com
 
-- name: Tencent QQ
+- name: Tencent Holdings Ltd.
   country: cn
   domains:
   - qq.com
 
-- name: "Namecheap Inc."
+- name: Namecheap Inc.
   country: us
   domains:
   - registrar-servers.com
@@ -86,4 +86,9 @@
 - name: Mimecast
   country: uk
   domains:
-  -  mimecast.com
+  - mimecast.com
+
+- name: Gandi SAS
+  country: fr
+  domains:
+  - gandi.net
