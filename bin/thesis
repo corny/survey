@@ -31,6 +31,10 @@ write_data "tex/mx_errors",  ->{ MxHost.errors.to_h }
 write_data "tex/mx_records", ->{ Stats.mx_address_stats }
 write_data "images/mxcount", ->{ Stats.mx_counts.to_yaml }
 
+%w( tls_version tls_cipher_suite ).each do |key|
+  write_data "tex/mx_hosts_#{key}s", ->{ Stats.send("#{key}s").map{|row| {names: row.send("#{key}_names"), count: row.count } } }
+end
+
 # Root Certificates
 %w( owners signatures_keys ).each do |key|
   write_data "tex/root_#{key}", ->{ RootCertificates.instance.send("by_#{key}").map(&:to_h) }
