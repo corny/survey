@@ -7,4 +7,11 @@ class Certificate < ActiveRecord::Base
     valid_for_name?
   ), to: :raw_certificate
 
+
+  def self.by_signatures_keys
+    select("COUNT(*) AS count, signature_algorithm")
+    .group(:signature_algorithm)
+    .order(:signature_algorithm)
+  end
+
 end

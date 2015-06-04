@@ -31,6 +31,9 @@ write_data "tex/mx_errors",  ->{ MxHost.errors.to_h }
 write_data "tex/mx_records", ->{ Stats.mx_address_stats }
 write_data "images/mxcount", ->{ Stats.mx_counts.to_yaml }
 
+write_data "tex/certs_signature_algorithms", ->{ Certificate.by_signatures_keys.map{|row| {name: row.signature_algorithm, count: row.count } } }
+write_data "tex/mx_ecdhe_curves", ->{ MxHost.ecdhe_curves }
+
 %w( tls_version tls_cipher_suite ).each do |key|
   write_data "tex/mx_hosts_#{key}s", ->{ Stats.send("#{key}s").map{|row| {names: row.send("#{key}_names"), count: row.count } } }
 end

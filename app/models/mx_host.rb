@@ -25,6 +25,15 @@ class MxHost < ActiveRecord::Base
     tls_cipher_suites.map{|v| CIPHER_SUITES[v.unpack('n').first] || v }
   end
 
+  def self.ecdhe_curves
+    select("COUNT(*) AS count, ecdhe_curve_id")
+    .group(:ecdhe_curve_id)
+    .order(:ecdhe_curve_id)
+    .map do |row|
+      [Curves.name(row.ecdhe_curve_id), row.count]
+    end.to_h
+  end
+
   def self.errors
     errors = {}
     select("error, count(*) AS count")
