@@ -1,4 +1,5 @@
 class MxHost < ActiveRecord::Base
+  include SelectHelper
 
   has_many :mx_records,
     foreign_key: :address,
@@ -23,15 +24,6 @@ class MxHost < ActiveRecord::Base
 
   def tls_cipher_suite_names
     tls_cipher_suites.map{|v| CIPHER_SUITES[v.unpack('n').first] || v }
-  end
-
-  def self.ecdhe_curves
-    select("COUNT(*) AS count, ecdhe_curve_id")
-    .group(:ecdhe_curve_id)
-    .order(:ecdhe_curve_id)
-    .map do |row|
-      [Curves.name(row.ecdhe_curve_id), row.count]
-    end.to_h
   end
 
   def self.errors
