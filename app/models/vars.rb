@@ -6,6 +6,7 @@ module Vars
     {
       domains:      domains,
       hosts:        hosts,
+      roots:        roots,
       certificates: certificates,
       mx_records:   mx_records,
     }
@@ -31,6 +32,7 @@ module Vars
     tls_count = MxHost.with_tls.count
     h = {
       total: total,
+      mozilla_root_without_trustbit: MxHost.where(chain_root_id: RootCertificates.instance.entries.reject(&:trustbit_websites).map(&:id) ).count,
       tls: {
         count: tls_count,
         ratio: tls_count.to_f / total,
@@ -40,6 +42,15 @@ module Vars
 
     h[:starttls_percent] = h[:starttls].to_f / h[:total] * 100
     h
+  end
+
+  def roots
+    instance = RootCertificates.instance
+    {
+      total:            instance.entries.count,
+      used:             instance.entries.select(&:used?).count,
+      without_trustbit: instance.entries.reject(&:trustbit_websites).count,
+    }
   end
 
   def certificates

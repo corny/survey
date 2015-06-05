@@ -4,11 +4,11 @@ require 'singleton'
 class RootCertificates
   include Singleton
 
-  # Map from SHA1 fingerprint to owner
-  def self.sha1_owners
+  # Map from SHA1 fingerprint to certificate
+  def self.by_sha1
     # source: https://docs.google.com/spreadsheet/ccc?key=0Ah-tHXMAwqU3dGx0cGFObG9QM192NFM4UWNBMlBaekE&usp=sharing
-    @sha1_owners ||= mozilla_list.map do |row|
-      [row["SHA-1 Fingerprint"].gsub(":","").downcase, row["Owner"]]
+    @by_sha1 ||= mozilla_list.map do |row|
+      [row["SHA-1 Fingerprint"].gsub(":","").downcase, row]
     end.to_h
   end
 
@@ -71,7 +71,11 @@ class RootCertificates
     end
 
     def used_count
-      certs.select{|c| c.count > 0 }.count
+      certs.select(&:used?).count
+    end
+
+    def trustbit_websites_count
+      certs.select(&:trustbit_websites).count
     end
 
     def countries
@@ -85,8 +89,9 @@ class RootCertificates
         hosts:         hosts_count,
         expired:       expired_ratio,
         certificates: {
-          total: certs.count,
-          used:  used_count,
+          total:   certs.count,
+          used:    used_count,
+          trustbit_websites: trustbit_websites_count,
         }
       )
     end
@@ -95,14 +100,34 @@ class RootCertificates
   Entry = Struct.new(:x509, :count, :expired_count, :missing) do
     delegate :subject, :key_size, :signature_algorithm, to: :x509
     def owner
-      RootCertificates.sha1_owners[x509.sha1] || x509_owner
+      entry ? entry['Owner'] : x509_owner
     end
+
+    def used?
+      count > 0
+    end
+
+    def trustbit_websites
+      entry && entry['Trust Bits'].include?("Websites")
+    end
+
+    # SHA1 as binary
+    def id
+      x509.sha1 binary: true
+    end
+
+    def entry
+      @entry ||= RootCertificates.by_sha1[x509.sha1]
+    end
+
     def x509_owner
       (subject["O"] || subject["CN"] || []).first
     end
+
     def intermediates
       RawCertificate.where("id IN (SELECT DISTINCT unnest(chain_intermediate_ids) FROM mx_hosts WHERE chain_root_id='\\x#{x509.sha1}')")
     end
+
     def intermediates_count
       intermediates.count
     end

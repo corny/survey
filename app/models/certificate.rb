@@ -14,4 +14,8 @@ class Certificate < ActiveRecord::Base
     .order(:signature_algorithm)
   end
 
+  def signature_algorithm_name
+    Names.signature_algorithm(signature_algorithm)
+  end
+
 end
