@@ -32,10 +32,11 @@ write_data "tex/mx_records", ->{ Stats.mx_address_stats }
 write_data "images/mxcount", ->{ Stats.mx_counts.to_yaml }
 
 write_data "tex/certs_signature_algorithms", ->{ Certificate.by_signatures_keys.map{|row| {oid: row.signature_algorithm, name: row.signature_algorithm_name, count: row.count } } }
-write_data "tex/certs_rsakeys",       ->{ Certificate.where(key_algorithm: 'RSA').select_with_group(:key_size) }
-write_data "tex/certs_ca_selfsigned", ->{ Certificate.select_with_group(:is_ca, :is_self_signed) }
-write_data "tex/mx_trusted_expired", ->{ MxHost.where("cert_trusted IS NOT null").select_with_group(:cert_trusted, :cert_expired) }
-write_data "tex/mx_ecdhe_curves", ->{ MxHost.ecdhe_curves }
+write_data "tex/certs_rsakeys",              ->{ Certificate.where(key_algorithm: 'RSA').select_with_group(:key_size) }
+write_data "tex/certs_days_valid",           ->{ Certificate.select_with_group(:days_valid) }
+write_data "tex/certs_ca_selfsigned",        ->{ Certificate.select_with_group(:is_ca, :is_self_signed) }
+write_data "tex/mx_trusted_expired",         ->{ MxHost.where("cert_trusted IS NOT null").select_with_group(:cert_trusted, :cert_expired) }
+write_data "tex/mx_ecdhe_curves",            ->{ MxHost.select_with_group(:ecdhe_curve_id).map{|row| row.merge(name: Names.curve(row['ecdhe_curve_id']))  } }
 
 %w( tls_version tls_cipher_suite ).each do |key|
   write_data "tex/mx_hosts_#{key}s", ->{ Stats.send("#{key}s").map{|row| {names: row.send("#{key}_names"), count: row.count } } }

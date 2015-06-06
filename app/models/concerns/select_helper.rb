@@ -5,6 +5,7 @@ module SelectHelper
     def select_with_group(*fields)
       select("COUNT(*) as count, " << fields.join(","))
       .group(*fields)
+      .order(*fields)
       .map do |row|
         attributes = row.attributes
         attributes.delete('id')
