@@ -28,19 +28,20 @@ module Vars
   end
 
   def hosts
-    total     = MxHost.count
-    tls_count = MxHost.with_tls.count
+    total = MxHost.count
     h = {
       total: total,
       mozilla_root_without_trustbit: MxHost.where(chain_root_id: RootCertificates.instance.entries.reject(&:trustbit_websites).map(&:id) ).count,
-      tls: {
-        count: tls_count,
-        ratio: tls_count.to_f / total,
-      }
     }
 
-
-    h[:starttls_percent] = h[:starttls].to_f / h[:total] * 100
+    # Anteile von Hosts mit STARTTLS, TLS, Certificates
+    %w( with_starttls with_tls with_certificates without_error ).each do |scope|
+      count = MxHost.send(scope).count
+      h[scope] = {
+        count: count,
+        ratio: count.to_f / total
+      }
+    end
     h
   end
 

@@ -8,7 +8,11 @@ class MxHost < ActiveRecord::Base
   belongs_to :certificate, foreign_key: :certificate_id, class_name: 'RawCertificate'
   belongs_to :root_certificate, foreign_key: :root_certificate_id, class_name: 'RawCertificate'
 
-  scope :with_tls, ->{ where "tls_versions IS NOT null" }
+  scope :without_error,     ->{ where "error IS null"}
+  scope :with_tls,          ->{ where "tls_versions IS NOT null" }
+  scope :with_starttls,     ->{ where "starttls IS true" }
+  scope :with_certificates, ->{ where "certificate_id IS NOT null" }
+  scope :with_hostnames,    ->(hostnames){ where "address IN (SELECT address FROM mx_records WHERE " << (["hostname ILIKE ?"]*hostnames.count).join(" OR ") << ")", *hostnames }
 
   CIPHER_SUITES = YAML.load_file(Rails.root.join "config/cipher_suites.yml")
   TLS_VERSIONS = {

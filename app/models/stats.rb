@@ -85,8 +85,11 @@ module Stats
 
     # merge entries with mangle entries
     top.map do |(name,count)|
-      entry = MANGLE.find{|m| m['name'] == name } || {'name' => name}
-      entry.merge 'count' => count
+      entry = MANGLE.find{|m| m['name'] == name } || {'name' => name, 'domains' => [name]}
+      entry['count'] = count # Anzahl Domains
+      # TODO TLS-Policies finden
+      entry['mx_hosts'] = MxHost.with_hostnames(entry['domains'].map{|d| "%.#{d}" }).join(&:hostname)
+      entry
     end
   end
 
