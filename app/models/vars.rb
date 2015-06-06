@@ -56,8 +56,11 @@ module Vars
   def certificates
     {
       total: Certificate.count,
+      keys: {
+        smallRSA: Certificate.where("key_algorithm='RSA' AND key_size < 2000").count,
+      },
       validity: {
-        below_zero: Certificate.where("days_valid < 0").count
+        below_zero: Certificate.where("days_valid < 0").count,
       }
     }
   end
