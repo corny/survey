@@ -53,15 +53,6 @@ ActiveRecord::Schema.define(version: 20150312211751) do
   add_index "domains", ["name"], name: "index_domains_on_name", unique: true, using: :btree
   add_index "domains", ["updated_at"], name: "index_domains_on_updated_at", using: :btree
 
-  create_table "mx_domains", force: :cascade do |t|
-    t.string   "name",       null: false
-    t.string   "txt"
-    t.datetime "updated_at"
-  end
-
-  add_index "mx_domains", ["name"], name: "index_mx_domains_on_name", unique: true, using: :btree
-  add_index "mx_domains", ["updated_at"], name: "index_mx_domains_on_updated_at", using: :btree
-
   create_table "mx_hosts", force: :cascade do |t|
     t.inet     "address",                null: false
     t.string   "error"
@@ -95,19 +86,21 @@ ActiveRecord::Schema.define(version: 20150312211751) do
   add_index "mx_hosts", ["tls_cipher_suites"], name: "index_mx_hosts_on_tls_cipher_suites", using: :btree
   add_index "mx_hosts", ["tls_versions"], name: "index_mx_hosts_on_tls_versions", using: :btree
 
-  create_table "mx_records", id: false, force: :cascade do |t|
-    t.string  "hostname",     null: false
-    t.inet    "address"
-    t.boolean "dns_secure"
-    t.string  "dns_error"
-    t.string  "dns_bogus"
-    t.boolean "cert_matches"
+  create_table "mx_records", primary_key: "hostname", force: :cascade do |t|
+    t.inet     "addresses",     null: false, array: true
+    t.boolean  "dns_secure"
+    t.string   "dns_error"
+    t.string   "dns_bogus"
+    t.string   "txt"
+    t.boolean  "starttls"
+    t.string   "cert_problems",              array: true
+    t.datetime "updated_at"
   end
 
-  add_index "mx_records", ["address", "hostname"], name: "index_mx_records_on_address_and_hostname", unique: true, using: :btree
-  add_index "mx_records", ["cert_matches"], name: "index_mx_records_on_cert_matches", using: :btree
+  add_index "mx_records", ["addresses"], name: "index_mx_records_on_addresses", using: :btree
   add_index "mx_records", ["dns_secure"], name: "index_mx_records_on_dns_secure", using: :btree
-  add_index "mx_records", ["hostname"], name: "index_mx_records_on_hostname", using: :btree
+  add_index "mx_records", ["starttls"], name: "index_mx_records_on_starttls", using: :btree
+  add_index "mx_records", ["updated_at"], name: "index_mx_records_on_updated_at", using: :btree
 
   create_table "raw_certificates", force: :cascade do |t|
     t.binary "raw", null: false
