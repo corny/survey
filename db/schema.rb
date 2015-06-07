@@ -87,17 +87,19 @@ ActiveRecord::Schema.define(version: 20150312211751) do
   add_index "mx_hosts", ["tls_versions"], name: "index_mx_hosts_on_tls_versions", using: :btree
 
   create_table "mx_records", primary_key: "hostname", force: :cascade do |t|
-    t.inet     "addresses",     null: false, array: true
-    t.boolean  "dns_secure"
+    t.inet     "addresses",                  array: true
+    t.boolean  "dns_secure",    null: false
     t.string   "dns_error"
     t.string   "dns_bogus"
     t.string   "txt"
-    t.boolean  "starttls"
+    t.boolean  "starttls",      null: false
     t.string   "cert_problems",              array: true
-    t.datetime "updated_at"
+    t.datetime "updated_at",    null: false
   end
 
   add_index "mx_records", ["addresses"], name: "index_mx_records_on_addresses", using: :btree
+  add_index "mx_records", ["cert_problems"], name: "index_mx_records_on_cert_problems", using: :btree
+  add_index "mx_records", ["dns_error"], name: "index_mx_records_on_dns_error", using: :btree
   add_index "mx_records", ["dns_secure"], name: "index_mx_records_on_dns_secure", using: :btree
   add_index "mx_records", ["starttls"], name: "index_mx_records_on_starttls", using: :btree
   add_index "mx_records", ["updated_at"], name: "index_mx_records_on_updated_at", using: :btree
