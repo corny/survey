@@ -14,5 +14,7 @@ class CreateMxRecords < ActiveRecord::Migration
       t.datetime :updated_at, null: false, index: true
     end
     execute "ALTER TABLE mx_records ADD PRIMARY KEY (hostname)"
+
+    execute "CREATE VIEW mx_addresses AS (SELECT hostname, unnest(addresses) AS address from mx_records)"
   end
 end

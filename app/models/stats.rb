@@ -94,12 +94,12 @@ module Stats
   end
 
   def mx_address_stats
-    addresses = MxRecord.connection.select_values("SELECT count(*) FROM mx_records WHERE address IS NOT null GROUP BY address").map(&:to_i)
+    addresses = MxRecord.connection.select_values("SELECT count(*) FROM mx_addresses GROUP BY address").map(&:to_i)
 
     result = {
       # Gesamtzahl von Hostnamen
-      host_count:   MxRecord.count("DISTINCT(hostname)"),
-      host_with_ip: MxRecord.with_address.count("DISTINCT(hostname)"),
+      host_count:   MxRecord.count,
+      host_with_ip: MxRecord.with_address.count,
 
       # Anzahl eindeutiger IP-Adressen
       ip_count:  addresses.count,
@@ -115,9 +115,9 @@ module Stats
     {
       servfail:    MxRecord.without_address.with_error.count,
       without_ip:  MxRecord.without_address.without_error.count,
-      ipv4_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records AS outer_hosts WHERE family(address)=4 AND NOT EXISTS (SELECT 1 FROM mx_records WHERE hostname=outer_hosts.hostname AND family(address)=6)"),
-      ipv6_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records AS outer_hosts WHERE family(address)=6 AND NOT EXISTS (SELECT 1 FROM mx_records WHERE hostname=outer_hosts.hostname AND family(address)=4)"),
-      ipv4and6:    select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_records AS outer_hosts WHERE family(address)=6 AND     EXISTS (SELECT 1 FROM mx_records WHERE hostname=outer_hosts.hostname AND family(address)=4)"),
+      ipv4_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_addresses AS outer_hosts WHERE family(address)=4 AND NOT EXISTS (SELECT 1 FROM mx_addresses WHERE hostname=outer_hosts.hostname AND family(address)=6)"),
+      ipv6_only:   select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_addresses AS outer_hosts WHERE family(address)=6 AND NOT EXISTS (SELECT 1 FROM mx_addresses WHERE hostname=outer_hosts.hostname AND family(address)=4)"),
+      ipv4and6:    select_int("SELECT COUNT(DISTINCT(hostname)) FROM mx_addresses AS outer_hosts WHERE family(address)=6 AND     EXISTS (SELECT 1 FROM mx_addresses WHERE hostname=outer_hosts.hostname AND family(address)=4)"),
     }.each do |key,count|
       result[key] = {
         count: count,

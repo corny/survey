@@ -6,8 +6,8 @@ class MxRecord < ActiveRecord::Base
     foreign_key: :address,
     primary_key: :address
 
-  scope :with_address,    ->{ where "address IS NOT null" }
-  scope :without_address, ->{ where "address IS null" }
+  scope :with_address,    ->{ where "addresses IS NOT null" }
+  scope :without_address, ->{ where "addresses IS null" }
   scope :with_error,      ->{ where "dns_error IS NOT null" }
   scope :without_error,   ->{ where "dns_error IS null" }
 

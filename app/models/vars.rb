@@ -22,8 +22,8 @@ module Vars
   def mx_records
     {
       with_addresses:   MxRecord.with_address.count,
-      unique_addresses: MxRecord.with_address.count("DISTINCT(address)"),
-      unique_hostnames: MxRecord.count("DISTINCT(hostname)"),
+      unique_addresses: MxAddress.count("DISTINCT(address)"),
+      unique_hostnames: MxRecord.count,
     }
   end
 
