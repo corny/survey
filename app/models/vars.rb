@@ -1,5 +1,7 @@
 module Vars
 
+  MX_WITH_TLSA = 201
+
   extend self
 
   def to_h
@@ -20,11 +22,14 @@ module Vars
   end
 
   def mx_records
-    {
-      with_addresses:   MxRecord.with_address.count,
-      unique_addresses: MxAddress.count("DISTINCT(address)"),
-      unique_hostnames: MxRecord.count,
+    h = {
+      with_addresses:      MxRecord.with_address.count,
+      unique_addresses:    MxAddress.count("DISTINCT(address)"),
+      unique_hostnames:    MxRecord.count,
+      nonpublic_addresses: Stats.mx_address_scopes.reject{|k,_| k.starts_with?("GLOBAL UNICAST") }.values.sum,
     }
+    h[:with_tlsa] = count_ratio(MX_WITH_TLSA,h[:unique_hostnames])
+    h
   end
 
   def hosts
@@ -37,10 +42,7 @@ module Vars
     # Anteile von Hosts mit STARTTLS, TLS, Certificates
     %w( with_starttls with_tls with_certificates without_error ).each do |scope|
       count = MxHost.send(scope).count
-      h[scope] = {
-        count: count,
-        ratio: count.to_f / total
-      }
+      h[scope] = count_ratio(count, total)
     end
     h
   end
@@ -55,14 +57,26 @@ module Vars
   end
 
   def certificates
+    total = Certificate.count
     {
-      total: Certificate.count,
+      total: total,
       keys: {
-        smallRSA: Certificate.where("key_algorithm='RSA' AND key_size < 2000").count,
+        bsiTwothousand:   count_ratio(Certificate.where("key_algorithm='RSA' AND key_size < 2000").count, total),
+        bsiThreethousand: count_ratio(Certificate.where("key_algorithm='RSA' AND key_size < 3000").count, total),
       },
       validity: {
-        below_zero: Certificate.where("days_valid < 0").count,
+        below_zero:     count_ratio(Certificate.where("days_valid < 0").count, total),
+        below_one_year: count_ratio(Certificate.where("days_valid > 0 AND days_valid <= 365").count, total),
       }
+    }
+  end
+
+  protected
+
+  def count_ratio(count,total)
+    {
+      count: count,
+      ratio: count.to_f / total
     }
   end
 

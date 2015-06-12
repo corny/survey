@@ -43,6 +43,12 @@ module Stats
     .to_h
   end
 
+  def dnsstatus(table)
+    ActiveRecord::Base.connection
+    .select_one("SELECT count(*) total, COUNT(CASE WHEN dns_secure THEN 1 ELSE null END) dns_secure, COUNT(dns_error!='') servfail, COUNT(dns_bogus) dns_bogus FROM #{table}")
+    .map{|k,v| [k,v.to_i] }.to_h
+  end
+
   def domains_mx_stats
     result = {}
     Domain.with_mx.find_each batch_size: 10000 do |d|
@@ -88,7 +94,7 @@ module Stats
       entry = MANGLE.find{|m| m['name'] == name } || {'name' => name, 'domains' => [name]}
       entry['count'] = count # Anzahl Domains
       # TODO TLS-Policies finden
-      entry['mx_hosts'] = MxHost.with_hostnames(entry['domains'].map{|d| "%.#{d}" }).join(&:hostname)
+      #entry['mx_hosts'] = MxHost.with_hostnames(entry['domains'].map{|d| "%.#{d}" }).map(&:address)
       entry
     end
   end
@@ -130,10 +136,10 @@ module Stats
 
   # Number of addresses per Scope
   def mx_address_scopes
-    MxRecord.with_address.uniq.pluck(:address).inject({}) do |result,address|
-      scope = address.scope
+    MxAddress.select("(CASE WHEN family(address)=4 THEN (address & inet '255.255.255.0') ELSE address END) AS addr, COUNT(*) AS count").group(:addr).inject({}) do |result,address|
+      scope = address.addr.scope
       result[scope] ||= 0
-      result[scope]  += 1
+      result[scope]  += address.count
       result
     end
   end
