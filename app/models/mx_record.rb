@@ -1,6 +1,7 @@
 require 'resolv'
 
 class MxRecord < ActiveRecord::Base
+  include SelectHelper
 
   has_one :mx_host,
     foreign_key: :address,
@@ -10,6 +11,8 @@ class MxRecord < ActiveRecord::Base
   scope :without_address, ->{ where "addresses IS null" }
   scope :with_error,      ->{ where "dns_error IS NOT null" }
   scope :without_error,   ->{ where "dns_error IS null" }
+  scope :without_problems,->{ where "cert_problems IS null" }
+  scope :trusted,         ->{ where "txt LIKE '%trusted%'" }
 
   scope :cert_trusted,      ->(bool){ where("EXISTS (SELECT * FROM mx_hosts WHERE address=mx_records.address AND cert_trusted=" << (bool ? 'TRUE' : 'FALSE') << ")") }
 

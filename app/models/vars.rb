@@ -22,14 +22,16 @@ module Vars
   end
 
   def mx_records
-    h = {
-      with_addresses:      MxRecord.with_address.count,
+    total = MxRecord.count
+    {
+      unique_hostnames:    total,
       unique_addresses:    MxAddress.count("DISTINCT(address)"),
-      unique_hostnames:    MxRecord.count,
+      with_addresses:      MxRecord.with_address.count,
       nonpublic_addresses: Stats.mx_address_scopes.reject{|k,_| k.starts_with?("GLOBAL UNICAST") }.values.sum,
+      with_starttls:       count_ratio(MxRecord.where(starttls: true).count, total),
+      all_valid:           count_ratio(MxRecord.without_problems.trusted.count, total),
+      with_tlsa:           count_ratio(MX_WITH_TLSA, total),
     }
-    h[:with_tlsa] = count_ratio(MX_WITH_TLSA,h[:unique_hostnames])
-    h
   end
 
   def hosts

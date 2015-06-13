@@ -1,4 +1,5 @@
 class MxDomain < ActiveRecord::Base
+  include SelectHelper
 
   has_many :mx_records,
     foreign_key: :hostname,

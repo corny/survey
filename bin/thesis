@@ -38,6 +38,8 @@ write_data "tex/certs_days_valid",           ->{ Certificate.select_with_group(:
 write_data "tex/certs_ca_selfsigned",        ->{ Certificate.select_with_group(:is_ca, :is_self_signed) }
 write_data "tex/mx_trusted_expired",         ->{ MxHost.where("cert_trusted IS NOT null").select_with_group(:cert_trusted, :cert_expired) }
 write_data "tex/mx_ecdhe_curves",            ->{ MxHost.with_tls.select_with_group(:ecdhe_curve_id).map{|row| row.merge(name: Names.curve(row['ecdhe_curve_id']))  } }
+write_data "tex/records_trusted_matches",    ->{ MxRecord.where(starttls: true).select_with_group(trusted: "txt LIKE '%trusted%'", matches: "NOT COALESCE('mismatch' = ANY(cert_problems), FALSE)") }
+write_data "tex/records_trusted_valid",      ->{ MxRecord.where(starttls: true).select_with_group(trusted: "txt LIKE '%trusted%'", valid:   "NOT COALESCE('expired'  = ANY(cert_problems), FALSE)") }
 
 %w( tls_version tls_cipher_suite ).each do |key|
   write_data "tex/mx_hosts_#{key}s", ->{ Stats.send("#{key}s").map{|row| {names: row.send("#{key}_names"), count: row.count } } }
