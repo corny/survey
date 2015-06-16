@@ -114,10 +114,11 @@ class TlsPolicyMap(Handler):
 
   DEFAULT_POLICY = "may"
 
-  def __init__(self, domain=None, mxResolver=None, txtResolver=None, pinning='never', notBefore=None):
+  def __init__(self, domain=None, mxResolver=None, txtResolver=None, pinning='never', maxage=None, dane=True):
     self.domain      = domain
     self.pinning     = pinning
-    self.notBefore   = notBefore
+    self.maxage      = maxage
+    self.dane        = dane
     self.mxResolver  = dns.resolver.Resolver()
     self.txtResolver = dns.resolver.Resolver()
 
@@ -126,9 +127,10 @@ class TlsPolicyMap(Handler):
     if mxResolver:
       self.mxResolver.nameservers  = mxResolver.split(",")
 
-  def map(self,txt_records):
+  def map(self, txt_records):
       # Ignore empty txt records (unreachable hosts)
       txt_records  = filter(None, txt_records)
+      notBefore    = (time.time() - self.maxage) if self.maxage != None else None
       fingerprints = []
       errors       = []
 
@@ -137,14 +139,14 @@ class TlsPolicyMap(Handler):
           return self.DEFAULT_POLICY
 
       for txt in txt_records:
-        # Convert key value pairs into a dict
+        # Convert key value pairs into a dictionary
         data = dict(s.split('=',2) for s in txt.split(" "))
 
         if data["starttls"] != "true":
             return self.DEFAULT_POLICY
 
         # Entry outdated?
-        if self.notBefore and int(data['updated']) < self.notBefore:
+        if notBefore and int(data['updated']) < notBefore:
             return self.DEFAULT_POLICY
 
         # Add fingerprint to list
@@ -152,7 +154,7 @@ class TlsPolicyMap(Handler):
             fingerprints.extend(data["fingerprint"].split(","))
 
         # TODO respect all records
-        if "certificate-errors" in data:
+        if "certificate-problems" in data:
             errors = True
 
       if (self.pinning=='always' or (errors and self.pinning=='on-errors')) and len(fingerprints) > 0:
@@ -164,7 +166,7 @@ class TlsPolicyMap(Handler):
         return "verify"
 
 
-  def resolve_and_map(self,nexthop):
+  def resolve_and_map(self, nexthop):
       try:
           # Query MX records
           mx_records  = self.mxResolver.query(nexthop,'MX')
@@ -172,6 +174,14 @@ class TlsPolicyMap(Handler):
 
           # Query TXT records for the MX records
           for mx in mx_records:
+              if self.dane:
+                  try:
+                      # Check for TLSA mx_records
+                      self.mxResolver.query('_25._tcp.' + mx.exchange, 'TLSA')
+                      return "dane-only"
+                  except dns.resolver.NXDOMAIN:
+                      None
+
               query   = "%s%s" % (mx.exchange, self.domain)
               answers = self.txtResolver.query(query,'TXT')
               txt_records.append("".join(answers[0].strings))
@@ -196,18 +206,14 @@ class TlsPolicyMap(Handler):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='TLS Policy Map daemon using the socketmap protocol')
-    parser.add_argument('--socket',      help='path to unix socket', default="/var/run/tlspolicy.sock")
-    parser.add_argument('--domain',      help='domain for lookups',  default="tls-scan.informatik.uni-bremen.de")
-    parser.add_argument('--pinning',     help='use certificate pinning with fingerprints', default='never', choices=['never','on-errors','always'])
-    parser.add_argument('--mxresolver',  help='nameserver for MX lookups',  default="")
-    parser.add_argument('--txtresolver', help='nameserver for TXT lookups', default="134.102.201.91")
-    parser.add_argument('--maxage',      help='maximum age of TXT records in seconds', type=int)
+    parser.add_argument('--socket',       help='Path to unix socket', default="/var/run/tlspolicy.sock")
+    parser.add_argument('--domain',       help='Domain for lookups',  default="tls-scan.informatik.uni-bremen.de")
+    parser.add_argument('--fingerprints', help='Use certificate pinning with fingerprints', default='always', choices=['always', 'on-problems', 'never'])
+    parser.add_argument('--mxresolver',   help='Nameserver for MX and TLSA lookups',  default="")
+    parser.add_argument('--txtresolver',  help='Nameserver for TXT lookups', default="134.102.201.91")
+    parser.add_argument('--maxage',       help='Maximum age of TXT records in seconds', type=int)
+    parser.add_argument('--dane',         help='Enforce DANE if TLSA records exists', default='true', choices=['true','false'])
     args = parser.parse_args()
-
-    if args.maxage != None:
-      notBefore = time.time() - args.maxage
-    else:
-      notBefore = None
 
     # Set options
     TlsPolicyHandler.tlsPolicy = TlsPolicyMap(
@@ -215,7 +221,8 @@ if __name__ == "__main__":
       pinning     = args.pinning,
       mxResolver  = args.mxresolver,
       txtResolver = args.txtresolver,
-      notBefore   = notBefore
+      maxage      = args.maxage,
+      dane        = args.dane=="true",
     )
 
     # Start server
