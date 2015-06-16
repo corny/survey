@@ -18,6 +18,7 @@ module Stats
   MANGLE_DOMAINS_MAP = MANGLE.inject({}){|h,f| f['domains'].each{|d| h[d] = f['name'] }; h }
 
   def domains
+    total  = Domain.count
     result = Hash[Domain.select("dns_error, COUNT(*) AS count").with_error.group(:dns_error).map{|r| [r.dns_error, r.count] }]
     result.merge! \
       with_mx:    domains_mx_stats,

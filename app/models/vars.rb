@@ -15,9 +15,13 @@ module Vars
   end
 
   def domains
+    total = Domain.count
     {
-      total:    Domain.count,
-      mx_stats: Stats.domains,
+      total:      total,
+      with_mx:    count_ratio(Domain.with_mx.count, total),
+      without_mx: count_ratio(Domain.without_error.without_mx.count, total),
+      servfail:   count_ratio(Domain.with_error.count, total),
+      mx_stats:   Stats.domains,
     }
   end
 
