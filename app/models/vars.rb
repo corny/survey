@@ -38,6 +38,7 @@ module Vars
     total = MxHost.count
     h = {
       total: total,
+      ssl_only: MxHost.where(tls_versions: "{\\\\x0300}").count,
       mozilla_root_without_trustbit: MxHost.where(chain_root_id: RootCertificates.instance.entries.reject(&:trustbit_websites).map(&:id) ).count,
     }
 
@@ -50,11 +51,12 @@ module Vars
   end
 
   def roots
-    instance = RootCertificates.instance
+    entries = RootCertificates.instance.entries
+    total   = entries.count
     {
-      total:            instance.entries.count,
-      used:             instance.entries.select(&:used?).count,
-      without_trustbit: instance.entries.reject(&:trustbit_websites).count,
+      total:            total,
+      used:             count_ratio(entries.select(&:used?).count, total),
+      without_trustbit: count_ratio(entries.reject(&:trustbit_websites).count, total),
     }
   end
 
