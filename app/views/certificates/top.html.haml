@@ -6,9 +6,11 @@
       %th Hosts
       %th Subject
       %th Trusted
+      %th Expired
   %tbody
     - @mx_hosts.each do |host|
       %tr
         %td.text-right= host.count
         %td= host.certificate.subject
         %td.text-right= host.count_cert_trusted
+        %td.text-right= host.cert_expired

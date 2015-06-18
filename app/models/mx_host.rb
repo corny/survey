@@ -40,7 +40,7 @@ class MxHost < ActiveRecord::Base
 
   def self.top_certificates(limit)
     with_certificates
-    .select('certificate_id, count(*) AS count, COUNT(CASE WHEN cert_trusted THEN 1 ELSE null END) AS count_cert_trusted')
+    .select('certificate_id, count(*) AS count, COUNT(CASE WHEN cert_trusted THEN 1 ELSE null END) AS count_cert_trusted, BOOL_OR(cert_expired) AS cert_expired')
     .group(:certificate_id)
     .order('count DESC')
     .limit(limit)
