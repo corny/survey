@@ -39,18 +39,27 @@ module Vars
   end
 
   def hosts
-    total = MxHost.count
+    scope = MxHost.ipv4
+    total = scope.count
     h = {
-      total: total,
-      ssl_only: MxHost.where(tls_versions: "{\\\\x0300}").count,
-      mozilla_root_without_trustbit: MxHost.where(chain_root_id: RootCertificates.instance.entries.reject(&:trustbit_websites).map(&:id) ).count,
+      total:               total,
+      ssl_only:            scope.where(tls_versions: "{\\\\x0300}").count,
+      mozilla_root_without_trustbit: scope.where(chain_root_id: RootCertificates.instance.entries.reject(&:trustbit_websites).map(&:id) ).count,
+      # Anzahl eindeutiger Zertifikate von Hosts mit Zertifikaten
     }
 
     # Anteile von Hosts mit STARTTLS, TLS, Certificates
-    %w( with_starttls with_tls with_certificates without_error ).each do |scope|
-      count = MxHost.send(scope).count
-      h[scope] = count_ratio(count, total)
+    %w( with_starttls with_tls with_certificates without_error ).each do |method|
+      h[method] = count_ratio(scope.send(method).count, total)
     end
+
+    # Anteil einmal/mehrfach verwendeter Server-Zertifikate
+    h.merge!(
+      unique_certificates:      scope.with_certificates.count("DISTINCT(certificate_id)"),
+      with_unique_certificates: count_ratio(scope.with_once_used_certificate.count, h['with_certificates'][:count]),
+      with_shared_certificates: count_ratio(scope.with_multiple_used_certificate.count, h['with_certificates'][:count]),
+    )
+
     h
   end
 
@@ -69,8 +78,10 @@ module Vars
     {
       total: total,
       keys: {
+        unique:           Certificate.count("DISTINCT(key_id)"),
         bsiTwothousand:   count_ratio(Certificate.where("key_algorithm='RSA' AND key_size < 2000").count, total),
         bsiThreethousand: count_ratio(Certificate.where("key_algorithm='RSA' AND key_size < 3000").count, total),
+        duplicate:        count_ratio(Certificate.where("key_id IN (SELECT key_id FROM certificates GROUP BY key_id HAVING count(*) > 1 )").count, total),
       },
       validity: {
         below_zero:     count_ratio(Certificate.where("days_valid < 0").count, total),

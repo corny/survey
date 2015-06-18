@@ -5,6 +5,11 @@
   issuers found.
 
 %table.table.table-condensed.table-striped.table-hover
-  %tr
+  %thead
+    %tr
+      %th Certificates
+      %th Issuer
+      %th Average validity <br> in years
+      %th Trusted Hosts Ratio
   %tbody
-    = render partial: 'subject', collection: Stats.issuers
+    = render partial: 'subject', collection: Stats.issuers(50)

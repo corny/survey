@@ -13,6 +13,14 @@ class MxHost < ActiveRecord::Base
   scope :with_starttls,     ->{ where "starttls IS true" }
   scope :with_certificates, ->{ where "certificate_id IS NOT null" }
   scope :with_hostnames,    ->(hostnames){ where "address IN (SELECT address FROM mx_records WHERE " << (["hostname ILIKE ?"]*hostnames.count).join(" OR ") << ")", *hostnames }
+  scope :ipv4,              ->{ where "family(address)=4" }
+
+  scope :with_multiple_used_certificate, -> {
+    where "certificate_id IN (SELECT certificate_id FROM mx_hosts WHERE certificate_id IS NOT null GROUP BY certificate_id HAVING count(*) > 1)"
+  }
+  scope :with_once_used_certificate, -> {
+    where "certificate_id IN (SELECT certificate_id FROM mx_hosts WHERE certificate_id IS NOT null GROUP BY certificate_id HAVING count(*) = 1)"
+  }
 
   CIPHER_SUITES = YAML.load_file(Rails.root.join "config/cipher_suites.yml")
   TLS_VERSIONS = {
@@ -28,6 +36,14 @@ class MxHost < ActiveRecord::Base
 
   def tls_cipher_suite_names
     tls_cipher_suites.map{|v| CIPHER_SUITES[v.unpack('n').first] || v }
+  end
+
+  def self.top_certificates(limit)
+    with_certificates
+    .select('certificate_id, count(*) AS count, COUNT(CASE WHEN cert_trusted THEN 1 ELSE null END) AS count_cert_trusted')
+    .group(:certificate_id)
+    .order('count DESC')
+    .limit(limit)
   end
 
   def self.errors

@@ -22,5 +22,6 @@ class CreateMxHosts < ActiveRecord::Migration
     end
 
     add_index :mx_hosts, :address, unique: true
+    execute "CREATE INDEX index_mx_hosts_on_address_family ON mx_hosts (family(address))"
   end
 end

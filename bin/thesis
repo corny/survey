@@ -26,7 +26,8 @@ def write_data(path,proc)
 end
 
 write_data "tex/vars",       ->{ Vars }
-write_data "tex/mx_charts",  ->{ Stats.mx_charts(50) }
+write_data "tex/mx_providers",    ->{ Stats.mx_providers(50) }
+write_data "tex/mx_certificates", ->{ MxHost.top_certificates(10).map{|mx| { count: mx.count, subject: mx.certificate.subject.to_h, trusted: mx.count_cert_trusted>0 } } }
 write_data "tex/mx_errors",  ->{ MxHost.errors.to_h }
 write_data "tex/mx_records", ->{ Stats.mx_address_stats }
 write_data "images/mxcount", ->{ Stats.mx_counts.to_yaml }

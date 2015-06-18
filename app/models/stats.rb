@@ -61,7 +61,7 @@ module Stats
   end
 
   # Häufigste MX-Records
-  def mx_charts(limit=20)
+  def mx_providers(limit=20)
     # SELECT unnest(mx_hosts), COUNT(*) from DOMAINS GROUP BY unnest(mx_hosts)
     result = {}
     Domain.with_mx.find_each batch_size: 10000 do |domain|

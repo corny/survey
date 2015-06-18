@@ -1,0 +1,14 @@
+%h1 Most frequently used certificates
+
+%table.table.table-condensed.table-striped.table-hover
+  %thead
+    %tr
+      %th Hosts
+      %th Subject
+      %th Trusted
+  %tbody
+    - @mx_hosts.each do |host|
+      %tr
+        %td.text-right= host.count
+        %td= host.certificate.subject
+        %td.text-right= host.count_cert_trusted
