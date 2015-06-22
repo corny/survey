@@ -12,6 +12,7 @@ class MxHost < ActiveRecord::Base
   scope :with_tls,          ->{ where "tls_versions IS NOT null" }
   scope :with_starttls,     ->{ where "starttls IS true" }
   scope :with_certificates, ->{ where "certificate_id IS NOT null" }
+  scope :with_mx_record,    ->{ where "address IN (SELECT DISTINCT(address) FROM mx_addresses WHERE address IS NOT null)" }
   scope :with_hostnames,    ->(hostnames){ where "address IN (SELECT address FROM mx_records WHERE " << (["hostname ILIKE ?"]*hostnames.count).join(" OR ") << ")", *hostnames }
   scope :ipv4,              ->{ where "family(address)=4" }
 
@@ -36,6 +37,14 @@ class MxHost < ActiveRecord::Base
 
   def tls_cipher_suite_names
     tls_cipher_suites.map{|v| CIPHER_SUITES[v.unpack('n').first] || v }
+  end
+
+  def self.tls_versions
+    where("tls_versions IS NOT NULL").select("tls_versions, COUNT(*) AS count").group(:tls_versions).order(:tls_versions)
+  end
+
+  def self.tls_cipher_suites
+    where("tls_cipher_suites IS NOT NULL").select("tls_cipher_suites, COUNT(*) AS count").group(:tls_cipher_suites).order(:tls_cipher_suites)
   end
 
   def self.top_certificates(limit)

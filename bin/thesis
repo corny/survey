@@ -2,7 +2,7 @@
 require_relative '../config/environment'
 
 def write_data(path,proc)
-  if ARGV.any? && !ARGV.include?(path)
+  if ARGV.any? && !ARGV.any?{|arg| Regexp.new("^" << Regexp.escape(arg).gsub('\*','.*?') << "$").match(path) }
     STDERR.puts "skipping #{path}"
     return
   end
@@ -25,30 +25,37 @@ def write_data(path,proc)
   end
 end
 
-write_data "tex/vars",       ->{ Vars }
-write_data "tex/mx_providers",    ->{ Stats.mx_providers(50) }
-write_data "tex/mx_certificates", ->{ MxHost.ipv4.top_certificates(10).map{|mx| { count: mx.count, subject: mx.certificate.subject.to_h, trusted: mx.count_cert_trusted>0, cert_expired: mx.cert_expired, sha1: mx.certificate.x509.sha1 } } }
-write_data "tex/mx_errors",  ->{ MxHost.errors.to_h }
-write_data "tex/mx_records", ->{ Stats.mx_address_stats }
-write_data "images/mxcount", ->{ Stats.mx_counts.to_yaml }
-write_data "tex/mx_dnssec",  ->{ %w( domains mx_records).map{|key| [key, Stats.dnsstatus(key)] }.to_h.to_yaml }
+write_data "vars",              ->{ Vars }
+write_data "mx_certificates",   ->{ MxHost.ipv4.top_certificates(10).map{|mx| { count: mx.count, subject: mx.certificate.subject.to_h, trusted: mx.count_cert_trusted>0, cert_expired: mx.cert_expired, sha1: mx.certificate.x509.sha1 } } }
+write_data "mx_records",        ->{ Stats.mx_address_stats }
+write_data "domains/mxcount",   ->{ Stats.mx_counts.to_yaml }
+write_data "domains/providers", ->{ Stats.mx_providers(50) }
+write_data "domains/dnssec",    ->{ %w( domains mx_records).map{|key| [key, Stats.dnsstatus(key)] }.to_h.to_yaml }
+write_data "domains/trusted_matches",    ->{ MxRecord.where(starttls: true).select_with_group(trusted: "txt LIKE '%trusted%'", matches: "NOT COALESCE('mismatch' = ANY(cert_problems), FALSE)") }
+write_data "domains/trusted_valid",      ->{ MxRecord.where(starttls: true).select_with_group(trusted: "txt LIKE '%trusted%'", valid:   "NOT COALESCE('expired'  = ANY(cert_problems), FALSE)") }
 
-write_data "tex/certs_signature_algorithms", ->{ Certificate.by_signatures_keys.map{|row| {oid: row.signature_algorithm, name: row.signature_algorithm_name, count: row.count } } }
-write_data "tex/certs_rsakeys",              ->{ Certificate.where(key_algorithm: 'RSA').select_with_group(:key_size) }
-write_data "tex/certs_days_valid",           ->{ Certificate.select_with_group(:days_valid) }
-write_data "tex/certs_ca_selfsigned",        ->{ Certificate.select_with_group(:is_ca, :is_self_signed) }
-write_data "tex/mx_trusted_expired",         ->{ MxHost.where("cert_trusted IS NOT null").select_with_group(:cert_trusted, :cert_expired) }
-write_data "tex/mx_ecdhe_curves",            ->{ MxHost.with_tls.select_with_group(:ecdhe_curve_id).map{|row| row.merge(name: Names.curve(row['ecdhe_curve_id']))  } }
-write_data "tex/records_trusted_matches",    ->{ MxRecord.where(starttls: true).select_with_group(trusted: "txt LIKE '%trusted%'", matches: "NOT COALESCE('mismatch' = ANY(cert_problems), FALSE)") }
-write_data "tex/records_trusted_valid",      ->{ MxRecord.where(starttls: true).select_with_group(trusted: "txt LIKE '%trusted%'", valid:   "NOT COALESCE('expired'  = ANY(cert_problems), FALSE)") }
+write_data "certs_signature_algorithms", ->{ Certificate.by_signatures_keys.map{|row| {oid: row.signature_algorithm, name: row.signature_algorithm_name, count: row.count } } }
+write_data "certs_rsakeys",              ->{ Certificate.where(key_algorithm: 'RSA').select_with_group(:key_size) }
+write_data "certs_days_valid",           ->{ Certificate.select_with_group(:days_valid) }
+write_data "certs_ca_selfsigned",        ->{ Certificate.select_with_group(:is_ca, :is_self_signed) }
+write_data "mx_trusted_expired",         ->{ MxHost.ipv4.where("cert_trusted IS NOT null").select_with_group(:cert_trusted, :cert_expired) }
+write_data "mx_ecdhe_curves",            ->{ MxHost.ipv4.with_tls.select_with_group(:ecdhe_curve_id).map{|row| row.merge(name: Names.curve(row['ecdhe_curve_id']))  } }
 
-%w( tls_version tls_cipher_suite ).each do |key|
-  write_data "tex/mx_hosts_#{key}s", ->{ Stats.send("#{key}s").map{|row| {names: row.send("#{key}_names"), count: row.count } } }
+# Auswertungen sowohl für Domain-Erhebung als auch für IPv4-Erhebung
+{
+  "ipv4"     => MxHost.ipv4,
+  "domains"  => MxHost.with_mx_record,
+}
+.each do |dir,scope|
+  write_data "#{dir}/mx_errors", ->{ scope.errors.to_h }
+  %w( tls_version tls_cipher_suite ).each do |key|
+    write_data "#{dir}/#{key}s", ->{ scope.send("#{key}s").map{|row| {names: row.send("#{key}_names"), count: row.count } } }
+  end
 end
 
 # Root Certificates
 %w( owners signatures_keys ).each do |key|
-  write_data "tex/root_#{key}", ->{ RootCertificates.instance.send("by_#{key}").map(&:to_h) }
+  write_data "root_#{key}", ->{ RootCertificates.instance.send("by_#{key}").map(&:to_h) }
 end
 
-write_data "tex/issuers", ->{ Stats.issuers(20).map(&:to_h) }
+write_data "issuers", ->{ Stats.issuers(20).map(&:to_h) }

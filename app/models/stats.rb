@@ -145,14 +145,6 @@ module Stats
     end
   end
 
-  def tls_versions
-    MxHost.where("tls_versions IS NOT NULL").select("tls_versions, COUNT(*) AS count").group(:tls_versions).order(:tls_versions)
-  end
-
-  def tls_cipher_suites
-    MxHost.where("tls_cipher_suites IS NOT NULL").select("tls_cipher_suites, COUNT(*) AS count").group(:tls_cipher_suites).order(:tls_cipher_suites)
-  end
-
   def field_count(table, field)
     ActiveRecord::Base.connection.select_rows("SELECT #{field}, COUNT(*) AS count FROM #{table} GROUP BY #{field} ORDER BY COUNT(*) DESC")
   end

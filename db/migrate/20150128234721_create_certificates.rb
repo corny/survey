@@ -12,6 +12,7 @@ class CreateCertificates < ActiveRecord::Migration
       t.boolean :is_self_signed,                    index: true
       t.integer :days_valid,                        index: true
       t.timestamp :first_seen_at, null: false
+      t.date      :not_after, index: true
     end
 
     execute "ALTER TABLE certificates ADD PRIMARY KEY (id)"

@@ -1,6 +1,10 @@
 module Vars
 
   MX_WITH_TLSA = 201
+  SHA1_OIDS = %w(
+    1.2.840.113549.1.1.5
+    1.3.14.3.2.29
+  )
 
   extend self
 
@@ -27,6 +31,7 @@ module Vars
 
   def mx_records
     total = MxRecord.count
+    starttls_hosts = MxHost.with_mx_record
     {
       unique_hostnames:    total,
       unique_addresses:    MxAddress.count("DISTINCT(address)"),
@@ -35,6 +40,7 @@ module Vars
       with_starttls:       count_ratio(MxRecord.where(starttls: true).count, total),
       all_valid:           count_ratio(MxRecord.without_problems.trusted.count, total),
       with_tlsa:           count_ratio(MX_WITH_TLSA, total),
+      starttls_hosts:      count_ratio(starttls_hosts.without_error.count, starttls_hosts.count),
     }
   end
 
@@ -75,6 +81,7 @@ module Vars
 
   def certificates
     total = Certificate.count
+    sha1  = Certificate.where(signature_algorithm: SHA1_OIDS)
     {
       total: total,
       keys: {
@@ -86,7 +93,8 @@ module Vars
       validity: {
         below_zero:     count_ratio(Certificate.where("days_valid < 0").count, total),
         below_one_year: count_ratio(Certificate.where("days_valid > 0 AND days_valid <= 365").count, total),
-      }
+      },
+      sha_one_sunrised: count_ratio(sha1.where("not_after >= '2017-01-01'").count, sha1.count),
     }
   end
 
