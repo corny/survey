@@ -78,4 +78,19 @@ class MxHost < ActiveRecord::Base
     errors.sort_by{|_,v| -v}
   end
 
+  #  used_count | certificates_count
+  # ------------+----------------------
+  #           1 |            1320820 -- 1320820 Zertifikate sind unter 1 IP-Adressen erreichbar
+  #           2 |             205372 --  205372 Zertifikate sind unter 2 IP-Adressen erreichbar
+  #           3 |              56242 --   56242 Zertifikate sind unter 3 IP-Adressen erreichbar
+  def self.certificate_distribution(family=4)
+    connection.select_all <<-SQL.squish
+      WITH tmp AS ( SELECT count(*) AS used_count FROM mx_hosts WHERE family(address)=#{family.to_i} AND certificate_id IS NOT NULL GROUP BY certificate_id)
+      SELECT used_count, COUNT(*) AS certificates_count
+      FROM tmp
+      GROUP BY used_count
+      ORDER BY used_count
+    SQL
+  end
+
 end

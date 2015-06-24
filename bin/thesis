@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 require_relative '../config/environment'
+require 'csv'
 
-def write_data(path,proc)
+def write(format,path,proc)
   if ARGV.any? && !ARGV.any?{|arg| Regexp.new("^" << Regexp.escape(arg).gsub('\*','.*?') << "$").match(path) }
     STDERR.puts "skipping #{path}"
     return
@@ -10,36 +11,55 @@ def write_data(path,proc)
   puts "building #{path}"
 
   data = proc.call
-  if Array === data
-    data = data.map{|o| o.deep_stringify_keys }
-  elsif data.respond_to?(:to_h)
-    data = data.to_h.deep_stringify_keys
-  end
+  dir  = Rails.root.join("data").join(path).tap(&:mkpath)
 
-  data = data.to_yaml unless String === data
+  case format
+  when :yaml
+    if Array === data
+      data = data.map{|o| o.deep_stringify_keys }
+    elsif data.respond_to?(:to_h)
+      data = data.to_h.deep_stringify_keys
+    end
 
-  file = Rails.root.join("data").join(path,"data.yml")
-  file.dirname.mkpath
-  file.open("w") do |f|
-    f.puts data
+    data = data.to_yaml unless String === data
+
+    dir.join("data.yml").open("w"){ |f| f.puts data }
+  when :csv
+    case data
+    when ActiveRecord::Result
+      CSV.open(dir.join("data.csv"), "w") do |csv|
+        csv << data.columns
+        data.each do |row|
+          csv << row.values
+        end
+      end
+    else
+      raise ArgumentError, "invalid type: #{data.class}"
+    end
+  else
+    raise ArgumentError, "invalid format: #{format}"
   end
 end
 
-write_data "vars",              ->{ Vars }
-write_data "mx_certificates",   ->{ MxHost.ipv4.top_certificates(10).map{|mx| { count: mx.count, subject: mx.certificate.subject.to_h, trusted: mx.count_cert_trusted>0, cert_expired: mx.cert_expired, sha1: mx.certificate.x509.sha1 } } }
-write_data "mx_records",        ->{ Stats.mx_address_stats }
-write_data "domains/mxcount",   ->{ Stats.mx_counts.to_yaml }
-write_data "domains/providers", ->{ Stats.mx_providers(50) }
-write_data "domains/dnssec",    ->{ %w( domains mx_records).map{|key| [key, Stats.dnsstatus(key)] }.to_h.to_yaml }
-write_data "domains/trusted_matches",    ->{ MxRecord.where(starttls: true).select_with_group(trusted: "txt LIKE '%trusted%'", matches: "NOT COALESCE('mismatch' = ANY(cert_problems), FALSE)") }
-write_data "domains/trusted_valid",      ->{ MxRecord.where(starttls: true).select_with_group(trusted: "txt LIKE '%trusted%'", valid:   "NOT COALESCE('expired'  = ANY(cert_problems), FALSE)") }
+write :yaml, "vars", ->{ Vars }
 
-write_data "certs_signature_algorithms", ->{ Certificate.by_signatures_keys.map{|row| {oid: row.signature_algorithm, name: row.signature_algorithm_name, count: row.count } } }
-write_data "certs_rsakeys",              ->{ Certificate.where(key_algorithm: 'RSA').select_with_group(:key_size) }
-write_data "certs_days_valid",           ->{ Certificate.select_with_group(:days_valid) }
-write_data "certs_ca_selfsigned",        ->{ Certificate.select_with_group(:is_ca, :is_self_signed) }
-write_data "mx_trusted_expired",         ->{ MxHost.ipv4.where("cert_trusted IS NOT null").select_with_group(:cert_trusted, :cert_expired) }
-write_data "mx_ecdhe_curves",            ->{ MxHost.ipv4.with_tls.select_with_group(:ecdhe_curve_id).map{|row| row.merge(name: Names.curve(row['ecdhe_curve_id']))  } }
+write :yaml, "mx_records",              ->{ Stats.mx_address_stats }
+write :yaml, "domains/mx_count",        ->{ Stats.mx_counts.to_yaml }
+write :csv,  "domains/mx_distribution", ->{ MxAddress.distribution }
+write :yaml, "domains/providers",       ->{ Stats.mx_providers(50) }
+write :yaml, "domains/dnssec",          ->{ %w( domains mx_records).map{|key| [key, Stats.dnsstatus(key)] }.to_h.to_yaml }
+write :yaml, "domains/trusted_matches", ->{ MxRecord.where(starttls: true).select_with_group(trusted: "txt LIKE '%trusted%'", matches: "NOT COALESCE('mismatch' = ANY(cert_problems), FALSE)") }
+write :yaml, "domains/trusted_valid",   ->{ MxRecord.where(starttls: true).select_with_group(trusted: "txt LIKE '%trusted%'", valid:   "NOT COALESCE('expired'  = ANY(cert_problems), FALSE)") }
+
+write :yaml, "certs_signature_algorithms", ->{ Certificate.by_signatures_keys.map{|row| {oid: row.signature_algorithm, name: row.signature_algorithm_name, count: row.count } } }
+write :yaml, "certs_rsakeys",              ->{ Certificate.where(key_algorithm: 'RSA').select_with_group(:key_size) }
+write :yaml, "certs_days_valid",           ->{ Certificate.select_with_group(:days_valid) }
+write :yaml, "certs_ca_selfsigned",        ->{ Certificate.select_with_group(:is_ca, :is_self_signed) }
+
+write :csv,  "ipv4/certificate_distribution", ->{ MxHost.certificate_distribution }
+write :yaml, "ipv4/certificates",             ->{ MxHost.ipv4.top_certificates(10).map{|mx| { count: mx.count, subject: mx.certificate.subject.to_h, trusted: mx.count_cert_trusted>0, cert_expired: mx.cert_expired, sha1: mx.certificate.x509.sha1 } } }
+write :yaml, "ipv4/trusted_expired",          ->{ MxHost.ipv4.where("cert_trusted IS NOT null").select_with_group(:cert_trusted, :cert_expired) }
+write :yaml, "ipv4/ecdhe_curves",             ->{ MxHost.ipv4.with_tls.select_with_group(:ecdhe_curve_id).map{|row| row.merge(name: Names.curve(row['ecdhe_curve_id']))  } }
 
 # Auswertungen sowohl für Domain-Erhebung als auch für IPv4-Erhebung
 {
@@ -47,15 +67,15 @@ write_data "mx_ecdhe_curves",            ->{ MxHost.ipv4.with_tls.select_with_gr
   "domains"  => MxHost.with_mx_record,
 }
 .each do |dir,scope|
-  write_data "#{dir}/mx_errors", ->{ scope.errors.to_h }
+  write :yaml, "#{dir}/mx_errors", ->{ scope.errors.to_h }
   %w( tls_version tls_cipher_suite ).each do |key|
-    write_data "#{dir}/#{key}s", ->{ scope.send("#{key}s").map{|row| {names: row.send("#{key}_names"), count: row.count } } }
+    write :yaml, "#{dir}/#{key}s", ->{ scope.send("#{key}s").map{|row| {names: row.send("#{key}_names"), count: row.count } } }
   end
 end
 
 # Root Certificates
 %w( owners signatures_keys ).each do |key|
-  write_data "root_#{key}", ->{ RootCertificates.instance.send("by_#{key}").map(&:to_h) }
+  write :yaml, "root_#{key}", ->{ RootCertificates.instance.send("by_#{key}").map(&:to_h) }
 end
 
-write_data "issuers", ->{ Stats.issuers(20).map(&:to_h) }
+write :yaml, "issuers", ->{ Stats.issuers(20).map(&:to_h) }
