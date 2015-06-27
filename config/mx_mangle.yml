@@ -12,7 +12,6 @@
   country: us
   domains:
   - outlook.com
-  - live.com
   - hotmail.com
 
 - name: Symantec Corporation

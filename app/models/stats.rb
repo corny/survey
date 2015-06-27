@@ -38,14 +38,14 @@ module Stats
 
   # Anzahl Hosts pro Anzahl MX-Einträge
   def mx_counts
-    ActiveRecord::Base.connection
+    connection
     .select_rows("SELECT COALESCE(array_length(mx_hosts,1),0) AS len, count(*) AS count FROM domains GROUP BY len ORDER BY len")
     .map{|row| row.map(&:to_i) }
     .to_h
   end
 
   def dnsstatus(table)
-    ActiveRecord::Base.connection
+    connection
     .select_one("SELECT count(*) total, COUNT(CASE WHEN dns_secure THEN 1 ELSE null END) dns_secure, COUNT(dns_error!='') servfail, COUNT(dns_bogus) dns_bogus FROM #{table}")
     .map{|k,v| [k,v.to_i] }.to_h
   end
@@ -62,9 +62,10 @@ module Stats
 
   # Häufigste MX-Records
   def mx_providers(limit=20)
+    # SELECT mx_addresses.hostname, mx_hosts.* from mx_hosts INNER JOIN mx_addresses ON mx_addresses.address=mx_hosts.address WHERE mx_addresses.hostname LIKE '%.emailsrvr.com' AND starttls IS NOT NULL;
     # SELECT unnest(mx_hosts), COUNT(*) from DOMAINS GROUP BY unnest(mx_hosts)
     result = {}
-    Domain.with_mx.find_each batch_size: 10000 do |domain|
+    Domain.with_mx.find_each batch_size: 50000 do |domain|
       unique_mx = Set.new
       domain.mx_hosts.each do |host|
         # strip domain
@@ -88,15 +89,17 @@ module Stats
     end
 
     # limit entries
-    top = result.to_a.sort_by{|r| -r[1] }[0..limit]
+    result = result.to_a.sort_by{|r| -r[1] }[0..limit]
 
     # merge entries with mangle entries
-    top.map do |(name,count)|
+    result.map do |(name,count)|
       entry = MANGLE.find{|m| m['name'] == name } || {'name' => name, 'domains' => [name]}
       entry['count'] = count # Anzahl Domains
-      # TODO TLS-Policies finden
-      #entry['mx_hosts'] = MxHost.with_hostnames(entry['domains'].map{|d| "%.#{d}" }).map(&:address)
-      entry
+
+      # STARTTLS-Anteil ermitteln
+      where = entry['domains'].map{|d| "hostname LIKE " << connection.quote('%.'+d) }
+      entry.merge! MxHost.connection.select_one("SELECT sum(CASE WHEN starttls THEN 1 ELSE 0 END) AS starttls_count, COUNT(*) AS hosts_count
+        FROM mx_hosts WHERE address IN (SELECT DISTINCT(address) FROM mx_addresses WHERE starttls IS NOT NULL AND (#{where.join ' OR '}))")
     end
   end
 
@@ -146,7 +149,7 @@ module Stats
   end
 
   def field_count(table, field)
-    ActiveRecord::Base.connection.select_rows("SELECT #{field}, COUNT(*) AS count FROM #{table} GROUP BY #{field} ORDER BY COUNT(*) DESC")
+    connection.select_rows("SELECT #{field}, COUNT(*) AS count FROM #{table} GROUP BY #{field} ORDER BY COUNT(*) DESC")
   end
 
   def hostnames_per_address_with_names(limit=50)
@@ -184,7 +187,7 @@ module Stats
     end
 
     def days_valid_median
-      ActiveRecord::Base.connection.select_one \
+      connection.select_one \
       "SELECT
               t1.n + t2.n + t3.n + t4.n AS n,
               t1.min_valid AS q1,
@@ -227,7 +230,7 @@ module Stats
   end
 
   def issuers_count
-    ActiveRecord::Base.connection.select_value("SELECT COUNT(*) FROM (SELECT DISTINCT issuer_id FROM certificates) AS count")
+    connection.select_value("SELECT COUNT(*) FROM (SELECT DISTINCT issuer_id FROM certificates) AS count")
   end
 
   def roots(limit=100)
@@ -240,8 +243,12 @@ module Stats
     end
   end
 
+  def connection
+    ActiveRecord::Base.connection
+  end
+
   def select_int(sql)
-    ActiveRecord::Base.connection.select_value(sql).to_i
+    connection.select_value(sql).to_i
   end
 
 end

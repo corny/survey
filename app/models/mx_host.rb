@@ -13,7 +13,7 @@ class MxHost < ActiveRecord::Base
   scope :with_starttls,     ->{ where "starttls IS true" }
   scope :with_certificates, ->{ where "certificate_id IS NOT null" }
   scope :with_mx_record,    ->{ where "address IN (SELECT DISTINCT(address) FROM mx_addresses WHERE address IS NOT null)" }
-  scope :with_hostnames,    ->(hostnames){ where "address IN (SELECT address FROM mx_records WHERE " << (["hostname ILIKE ?"]*hostnames.count).join(" OR ") << ")", *hostnames }
+  scope :with_hostnames,    ->(hostnames){ where "address IN (SELECT DISTINCT(address) FROM mx_addresses WHERE " << (["hostname ILIKE ?"]*hostnames.count).join(" OR ") << ")", *hostnames }
   scope :ipv4,              ->{ where "family(address)=4" }
 
   scope :with_multiple_used_certificate, -> {

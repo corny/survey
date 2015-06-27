@@ -91,8 +91,8 @@ module Vars
         duplicate:        count_ratio(Certificate.where("key_id IN (SELECT key_id FROM certificates GROUP BY key_id HAVING count(*) > 1 )").count, total),
       },
       validity: {
-        below_zero:     count_ratio(Certificate.where("days_valid < 0").count, total),
-        below_one_year: count_ratio(Certificate.where("days_valid > 0 AND days_valid <= 365").count, total),
+        below_zero:     count_ratio(Certificate.where("days_valid <  0").count, total),
+        below_one_year: count_ratio(Certificate.where("days_valid >= 0 AND days_valid <= 365").count, total),
       },
       sha_one_sunrised: count_ratio(sha1.where("not_after >= '2017-01-01'").count, sha1.count),
     }
