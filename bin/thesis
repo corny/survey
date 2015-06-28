@@ -91,4 +91,4 @@ end
   write :yaml, "root_#{key}", ->{ RootCertificates.instance.send("by_#{key}").map(&:to_h) }
 end
 
-write :yaml, "issuers", ->{ Stats.issuers(20).map(&:to_h) }
+write :yaml, "issuers", ->{ Issuers.list(20).map(&:to_h) }
