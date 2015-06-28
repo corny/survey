@@ -2,6 +2,8 @@
 require_relative '../config/environment'
 require 'csv'
 
+DATA_DIR = Rails.root.join("data")
+
 def write(format,path,proc)
   if ARGV.any? && !ARGV.any?{|arg| Regexp.new("^" << Regexp.escape(arg).gsub('\*','.*?') << "$").match(path) }
     STDERR.puts "skipping #{path}"
@@ -9,9 +11,16 @@ def write(format,path,proc)
   end
 
   puts "building #{path}"
+  formats = {csv: "csv", yaml: "yml"}
+
+  if path.starts_with?("vars/")
+    file = DATA_DIR.join("#{path}.#{formats[format]}")
+  else
+    file = DATA_DIR.join(path, "data.#{formats[format]}")
+  end
 
   data = proc.call
-  dir  = Rails.root.join("data").join(path).tap(&:mkpath)
+  dir  = file.dirname.tap(&:mkpath)
 
   case format
   when :yaml
@@ -23,11 +32,11 @@ def write(format,path,proc)
 
     data = data.to_yaml unless String === data
 
-    dir.join("data.yml").open("w"){ |f| f.puts data }
+    file.open("w"){ |f| f.puts data }
   when :csv
     case data
     when ActiveRecord::Result
-      CSV.open(dir.join("data.csv"), "w") do |csv|
+      CSV.open(file, "w") do |csv|
         csv << data.columns
         data.each do |row|
           csv << row.values
@@ -41,9 +50,12 @@ def write(format,path,proc)
   end
 end
 
-write :yaml, "vars", ->{ Vars }
+Vars::METHODS.each do |method|
+  write :yaml, "vars/#{method}",        ->{ Vars.send(method) }
+end
 
 write :yaml, "mx_records",              ->{ Stats.mx_address_stats }
+write :yaml, "mx_validity",             ->{ Stats.mx_validity }
 write :yaml, "domains/mx_count",        ->{ Stats.mx_counts.to_yaml }
 write :csv,  "domains/mx_distribution", ->{ MxAddress.distribution }
 write :yaml, "domains/providers",       ->{ Stats.mx_providers(20) }

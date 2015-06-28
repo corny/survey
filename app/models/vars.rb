@@ -6,17 +6,16 @@ module Vars
     1.3.14.3.2.29
   )
 
-  extend self
+  METHODS = %w(
+    domains
+    hosts
+    roots
+    certificates
+    mx_records
+    mx_domains
+  )
 
-  def to_h
-    {
-      domains:      domains,
-      hosts:        hosts,
-      roots:        roots,
-      certificates: certificates,
-      mx_records:   mx_records,
-    }
-  end
+  extend self
 
   def domains
     total = Domain.count
@@ -41,6 +40,15 @@ module Vars
       all_valid:           count_ratio(MxRecord.without_problems.trusted.count, total),
       with_tlsa:           count_ratio(MX_WITH_TLSA, total),
       starttls_hosts:      count_ratio(starttls_hosts.without_error.count, starttls_hosts.count),
+    }
+  end
+
+  def mx_domains
+    domains = Domain.mx_hosts
+    total   = domains.count
+    invalid = domains.reject{|domain| ICANN.fqdn?(domain) }
+    {
+      invalid: count_ratio(invalid.count, total)
     }
   end
 
