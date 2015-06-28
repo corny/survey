@@ -3,8 +3,6 @@ require 'nsupdate'
 
 class Domain < ActiveRecord::Base
 
-  RESOLVER = '8.8.8.8'
-
   scope :with_mx,       ->{ where 'ARRAY_LENGTH(mx_hosts,1) > 0' }
   scope :without_mx,    ->{ where 'ARRAY_LENGTH(mx_hosts,1) IS NULL' }
   scope :with_error,    ->{ where 'dns_error IS NOT NULL' }

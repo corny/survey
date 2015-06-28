@@ -16,6 +16,8 @@ class MxHost < ActiveRecord::Base
   scope :with_hostnames,    ->(hostnames){ where "address IN (SELECT DISTINCT(address) FROM mx_addresses WHERE " << (["hostname ILIKE ?"]*hostnames.count).join(" OR ") << ")", *hostnames }
   scope :ipv4,              ->{ where "family(address)=4" }
 
+  scope :certificate_id,    ->(id){ where "certificate_id=E?", "\\\\x#{id}" }
+
   scope :with_multiple_used_certificate, -> {
     where "certificate_id IN (SELECT certificate_id FROM mx_hosts WHERE certificate_id IS NOT null GROUP BY certificate_id HAVING count(*) > 1)"
   }

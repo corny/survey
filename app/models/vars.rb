@@ -18,14 +18,21 @@ module Vars
   extend self
 
   def domains
-    total = Domain.count
-    {
+    total     = Domain.count
+    reachable = DomainsMx.where("mx_hostname IN (SELECT hostname FROM mx_addresses INNER JOIN mx_hosts ON mx_hosts.address=mx_addresses.address AND mx_hosts.starttls IS NOT NULL)").count("DISTINCT(name)")
+    h = {
       total:      total,
       with_mx:    count_ratio(Domain.with_mx.count, total),
       without_mx: count_ratio(Domain.without_error.without_mx.count, total),
       servfail:   count_ratio(Domain.with_error.count, total),
       mx_stats:   Stats.domains,
+      reachable:  {
+        total:            reachable,
+        starttls:         count_ratio(DomainsMx.where("mx_hostname IN (SELECT hostname FROM mx_records WHERE starttls)").count("DISTINCT(name)"), reachable),
+        without_problems: count_ratio(DomainsMx.where("mx_hostname IN (SELECT hostname FROM mx_records WHERE starttls AND cert_problems IS null)").count("DISTINCT(name)"), reachable),
+      }
     }
+    h
   end
 
   def mx_records
@@ -74,6 +81,9 @@ module Vars
       with_shared_certificates: count_ratio(scope.with_multiple_used_certificate.count, h['with_certificates'][:count]),
     )
 
+    # Verhältnis von IP-Adressen zu Server-Zertifikaten
+    h[:per_certificate] = h['with_certificates'][:count].to_f / h[:unique_certificates]
+
     h
   end
 
@@ -88,15 +98,19 @@ module Vars
   end
 
   def certificates
-    total = Certificate.count
-    sha1  = Certificate.where(signature_algorithm: SHA1_OIDS)
+    total     = Certificate.count
+    rsa       = Certificate.where(key_algorithm: 'RSA')
+    rsa_count = rsa.count
+    sha1      = Certificate.where(signature_algorithm: SHA1_OIDS)
     {
       total: total,
       keys: {
-        unique:           Certificate.count("DISTINCT(key_id)"),
-        bsiTwothousand:   count_ratio(Certificate.where("key_algorithm='RSA' AND key_size < 2000").count, total),
-        bsiThreethousand: count_ratio(Certificate.where("key_algorithm='RSA' AND key_size < 3000").count, total),
-        duplicate:        count_ratio(Certificate.where("key_id IN (SELECT key_id FROM certificates GROUP BY key_id HAVING count(*) > 1 )").count, total),
+        unique:       Certificate.count("DISTINCT(key_id)"),
+        duplicate:    count_ratio(Certificate.where("key_id IN (SELECT key_id FROM certificates GROUP BY key_id HAVING count(*) > 1 )").count, total),
+      },
+      rsa_keys: {
+        two_thousand: count_ratio(rsa.where("key_size <= 1024").count, rsa_count),
+        one_thousand: count_ratio(rsa.where("key_size >= 2048").count, rsa_count),
       },
       validity: {
         below_zero:     count_ratio(Certificate.where("days_valid <  0").count, total),

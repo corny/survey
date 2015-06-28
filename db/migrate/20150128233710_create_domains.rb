@@ -11,5 +11,6 @@ class CreateDomains < ActiveRecord::Migration
       t.datetime :updated_at, index: true
     end
     add_index :domains, :name, unique: true
+    execute "CREATE VIEW domains_mx AS (SELECT name, unnest(mx_hosts) AS mx_hostname from domains)"
   end
 end
