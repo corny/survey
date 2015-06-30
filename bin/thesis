@@ -82,7 +82,7 @@ write :yaml, "ipv4/certificates",             ->{ MxHost.ipv4.top_certificates(1
 write :yaml, "ipv4/ecdhe_curves",             ->{ MxHost.ipv4.with_tls.select_with_group(:ecdhe_curve_id).map{|row| row.merge(name: Names.curve(row['ecdhe_curve_id']))  } }
 
 # Auswertungen über einen Zeitraum
-daterange = (Date.parse "2009-01-01")..(Date.parse "2015-05-31")
+daterange = (Date.parse "2008-06-01")..(Date.parse "2015-05-31")
 write :csv,  "certs/time_keysizes",   ->{ Certificate.where(key_size: [512,1024,2048,4096]).keysize_over_time :key_size, daterange }
 write :csv,  "certs/time_signatures", ->{ Certificate.where(signature_algorithm: %w(1.2.840.113549.1.1.4 1.2.840.113549.1.1.5 1.2.840.113549.1.1.11)).keysize_over_time :signature_algorithm, daterange }
 
