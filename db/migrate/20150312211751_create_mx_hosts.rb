@@ -10,7 +10,7 @@ class CreateMxHosts < ActiveRecord::Migration
       t.boolean :cert_trusted,                   index: true
       t.boolean :cert_expired,                   index: true
       t.string  :cert_error,                     index: true
-      t.binary  :certificate_id,                  index: true
+      t.binary  :certificate_id,                  index: true # leaf certificate
       t.binary  :ca_certificate_ids, array: true, index: true # received itermediate/root certificates
 
       t.binary  :chain_root_id,                       index: true # root certificate of a valid chain

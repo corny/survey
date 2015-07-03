@@ -104,6 +104,8 @@ module Vars
     sha1      = Certificate.where(signature_algorithm: SHA1_OIDS)
     {
       total: total,
+      leaf:   count_ratio(Certificate.leaf.count, total),
+      issuer: count_ratio(Certificate.issuer.count, total),
       keys: {
         unique:       Certificate.count("DISTINCT(key_id)"),
         duplicate:    count_ratio(Certificate.where("key_id IN (SELECT key_id FROM certificates GROUP BY key_id HAVING count(*) > 1 )").count, total),

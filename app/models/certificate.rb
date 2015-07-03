@@ -3,6 +3,12 @@ class Certificate < ActiveRecord::Base
 
   belongs_to :raw_certificate, foreign_key: :id
 
+  # Wird als Server-Zertifikat verwendet
+  scope :leaf,   ->{ where "id IN (SELECT DISTINCT(certificate_id) FROM mx_hosts)" }
+
+  # Wird als Root/Zwischenzertifikat verwendet
+  scope :issuer, ->{ where "id IN (SELECT DISTINCT(id) FROM ca_certificate_ids)" }
+
   delegate *%i(
     x509
     valid_for_name?

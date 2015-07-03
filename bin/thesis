@@ -71,11 +71,14 @@ write :csv,  "mx/distribution",    ->{ MxAddress.distribution }
 write :yaml, "mx/trusted_matches", ->{ MxRecord.where(starttls: true).select_with_group(trusted: "txt LIKE '%trusted%'", matches: "NOT COALESCE('mismatch' = ANY(cert_problems), FALSE)") }
 write :yaml, "domains/dnssec",     ->{ %w( domains mx_records).map{|key| [key, Stats.dnsstatus(key)] }.to_h.to_yaml }
 
-write :yaml, "certs_signature_algorithms", ->{ Certificate.by_signatures_keys.map{|row| {oid: row.signature_algorithm, name: row.signature_algorithm_name, count: row.count } } }
-write :yaml, "certs_rsakeys",              ->{ Certificate.where(key_algorithm: 'RSA').select_with_group(:key_size) }
-write :yaml, "certs_days_valid",           ->{ Certificate.select_with_group(:days_valid) }
-write :yaml, "certs_ca_selfsigned",        ->{ Certificate.select_with_group(:is_ca, :is_self_signed) }
-write :yaml, "certs_blacklisted",          ->{ Certificate.where("key_blacklisted").select_with_group(:key_size, :key_blacklisted) }
+write :yaml, "certs/signature_algorithms", ->{ Certificate.by_signatures_keys.map{|row| {oid: row.signature_algorithm, name: row.signature_algorithm_name, count: row.count } } }
+write :yaml, "certs/rsakeys",              ->{ Certificate.where(key_algorithm: 'RSA').select_with_group(:key_size) }
+write :yaml, "certs/days_valid",           ->{ Certificate.select_with_group(:days_valid) }
+write :yaml, "certs/blacklisted",          ->{ Certificate.where("key_blacklisted").select_with_group(:key_size, :key_blacklisted) }
+
+%w( leaf issuer ).each do |key|
+  write :yaml, "certs/#{key}_ca_selfsigned", ->{ Certificate.send(key).select_with_group(:is_ca, :is_self_signed) }
+end
 
 write :csv,  "ipv4/certificate_distribution", ->{ MxHost.certificate_distribution }
 write :yaml, "ipv4/certificates",             ->{ MxHost.ipv4.top_certificates(10).map{|mx| { count: mx.count, subject: mx.certificate.subject.to_h, trusted: mx.count_cert_trusted>0, cert_expired: mx.cert_expired, sha1: mx.certificate.x509.sha1 } } }
