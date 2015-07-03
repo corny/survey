@@ -12,6 +12,7 @@
 
 import argparse
 import os
+import re
 import time
 import dns.resolver
 import SocketServer
@@ -158,7 +159,7 @@ class TlsPolicyMap(Handler):
             errors = True
 
       if (self.pinning=='always' or (errors and self.pinning=='on-errors')) and len(fingerprints) > 0:
-        return "fingerprint " + " ".join(["match="+fp for fp in fingerprints])
+        return "fingerprint " + " ".join(["match=" + ":".join(re.findall("..",fp)) for fp in fingerprints])
 
       if errors:
         return "encrypt"

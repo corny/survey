@@ -37,19 +37,27 @@ class TestMap(unittest2.TestCase):
         # only one outdated
         self.assertEqual(policyMap.map(["starttls=true updated=130","starttls=true updated=120"]), 'encrypt')
 
+
+    def test_pinning_tls_versions(self):
+        policyMap = TlsPolicyMap()
+        self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd"]), 'verify')
+        self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd 0301,0303"]), 'fingerprint protocols=TLSv1.2')
+        self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd 0301"]), 'fingerprint protocols=!SSLv2:!SSLv3')
+
+
     def test_pinning_on_errors(self):
         policyMap = TlsPolicyMap(pinning='on-errors')
         self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd"]), 'verify')
-        self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd certificate-problems=expired"]), 'fingerprint match=abcd')
+        self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd certificate-problems=expired"]), 'fingerprint match=ab:cd')
 
     def test_pinning_always(self):
         policyMap = TlsPolicyMap(pinning='always')
         self.assertEqual(policyMap.map(["starttls=true"]), 'verify')
         self.assertEqual(policyMap.map(["starttls=true certificate-problems=expired"]), 'encrypt')
-        self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd"]), 'fingerprint match=abcd')
-        self.assertEqual(policyMap.map(["starttls=true fingerprint=dead,beef"]), 'fingerprint match=dead match=beef')
+        self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd"]), 'fingerprint match=ab:cd')
+        self.assertEqual(policyMap.map(["starttls=true fingerprint=dead,beef"]), 'fingerprint match=de:ad match=be:ef')
         self.assertEqual(policyMap.map(["starttls=true fingerprint=dead,beef","starttls=true fingerprint=feed"]),
-            'fingerprint match=dead match=beef match=feed')
+            'fingerprint match=de:ad match=be:ef match=fe:ed')
 
     def test_certificate_valid(self):
         self.assertEqual(self.map(["starttls=true"]), 'verify')
@@ -58,7 +66,7 @@ class TestMap(unittest2.TestCase):
         self.assertEqual(self.map(["starttls=true certificate-problems=mismatch"]), 'encrypt')
         self.assertEqual(self.map(["starttls=true certificate-problems=mismatch fingerprint=abcd"]), 'encrypt')
 
-    # TODO Add DANE support
+    # TODO Test DANE support
 
 
 class TestResolve(unittest2.TestCase):
