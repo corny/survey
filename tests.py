@@ -25,17 +25,25 @@ class TestMap(unittest2.TestCase):
         self.assertEqual(self.map(["starttls=false"]), 'may')
         self.assertEqual(self.map(["starttls=false",""]), 'may')
 
+    def test_trusted(self):
+        policyMap = TlsPolicyMap(trusted="system")
+        self.assertEqual(policyMap.map(["starttls=true"]), 'encrypt')
+        self.assertEqual(policyMap.map(["starttls=true trusted=system"]), 'verify')
+        self.assertEqual(policyMap.map(["starttls=true trusted=foo,system"]), 'verify')
+        self.assertEqual(policyMap.map(["starttls=true trusted=foo"]), 'encrypt')
+
+
     def test_timestamp(self):
-        policyMap = TlsPolicyMap(maxage=123)
+        policyMap = TlsPolicyMap(maxage=50, time=100)
 
         # not yet outdated
-        self.assertEqual(policyMap.map(["starttls=true updated=123 trusted=system"]), 'verify')
+        self.assertEqual(policyMap.map(["starttls=true updated=50"]), 'verify')
 
         # outdated
-        self.assertEqual(policyMap.map(["starttls=true updated=122"]), 'encrypt')
+        self.assertEqual(policyMap.map(["starttls=true updated=49"]), 'encrypt')
 
         # only one outdated
-        self.assertEqual(policyMap.map(["starttls=true updated=130","starttls=true updated=120"]), 'encrypt')
+        self.assertEqual(policyMap.map(["starttls=true updated=49", "starttls=true updated=120"]), 'encrypt')
 
 
     def test_tls_versions(self):
@@ -50,11 +58,13 @@ class TestMap(unittest2.TestCase):
     def test_tls_ciphers(self):
         policyMap = TlsPolicyMap()
         # ECDHE_RSA_WITH_AES_128_CBC_SHA
-        self.assertEqual(policyMap.map(["starttls=true tls-ciphers=c013"]), 'verify exclude=aNULL:eNULL:RC4:EXP:SEED:DES:3DES:CAMELLIA')
+        self.assertEqual(policyMap.map(["starttls=true tls-ciphers=c013"]),
+            'verify exclude=aNULL:eNULL:RC4:EXP:SEED:DES:3DES:CAMELLIA')
 
         # ECDHE_RSA_WITH_RC4_128_SHA
         # ECDHE_RSA_WITH_AES_128_GCM_SHA256
-        self.assertEqual(policyMap.map(["starttls=true tls-ciphers=c011,c02f"]), 'verify exclude=aNULL:eNULL:EXP:SEED:DES:3DES:CAMELLIA')
+        self.assertEqual(policyMap.map(["starttls=true tls-ciphers=c011,c02f"]),
+            'verify exclude=aNULL:eNULL:EXP:SEED:DES:3DES:CAMELLIA')
 
 
     def test_pinning_on_errors(self):
@@ -77,8 +87,6 @@ class TestMap(unittest2.TestCase):
     def test_certificate_problems(self):
         self.assertEqual(self.map(["starttls=true certificate-problems=mismatch"]), 'encrypt')
         self.assertEqual(self.map(["starttls=true certificate-problems=mismatch fingerprint=abcd"]), 'encrypt')
-
-    # TODO Test DANE support
 
 
 #class TestResolve(unittest2.TestCase):

@@ -442,11 +442,13 @@ class TlsPolicyMap(Handler):
     "c0af": "ECDHE_ECDSA_WITH_AES_256_CCM_8",
   }
 
-  def __init__(self, domain=None, mxResolver=None, txtResolver=None, pinning='never', maxage=None, dane=True):
+  def __init__(self, domain=None, mxResolver=None, txtResolver=None, pinning='never', maxage=None, dane=True, trusted=None, time=None):
     self.domain      = domain
     self.pinning     = pinning
     self.maxage      = maxage
     self.dane        = dane
+    self.trusted     = trusted
+    self.time        = time
     self.mxResolver  = dns.resolver.Resolver()
     self.txtResolver = dns.resolver.Resolver()
 
@@ -455,13 +457,18 @@ class TlsPolicyMap(Handler):
     if mxResolver:
       self.mxResolver.nameservers  = mxResolver.split(",")
 
+  def now(self):
+    return self.time if self.time != None else time.time()
+
+
   def map(self, txt_records):
       # Ignore empty txt records (unreachable hosts)
       txt_records  = filter(None, txt_records)
-      notBefore    = (time.time() - self.maxage) if self.maxage != None else None
+      notBefore    = (self.now() - self.maxage) if self.maxage != None else None
       fingerprints = set()
       ciphers      = set()
       errors       = False
+      outdated     = False
       options      = []
       max_version  = None
       policy       = None
@@ -479,7 +486,7 @@ class TlsPolicyMap(Handler):
 
         # Entry outdated?
         if notBefore and int(data['updated']) < notBefore:
-            return self.DEFAULT_POLICY
+            outdated = True
 
         # Collect fingerprints
         if "fingerprint" in data:
@@ -497,8 +504,12 @@ class TlsPolicyMap(Handler):
             if max_version == None or version < max_version:
                 max_version = version
 
-        if "certificate-problems" in data:
+        if "certificate-problems" in data or (self.trusted != None and ("trusted" not in data or self.trusted not in data["trusted"].split(","))):
             errors = True
+
+      # Don't rely on anything
+      if outdated:
+        return "encrypt"
 
       # exclude insecure and unused ciphers
       if len(ciphers) > 0:
@@ -566,20 +577,22 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='TLS Policy Map daemon using the socketmap protocol')
     parser.add_argument('--socket',       help='Path to unix socket', default="/var/run/tlspolicy.sock")
-    parser.add_argument('--domain',       help='Domain for lookups',  default="tls-scan.informatik.uni-bremen.de")
+    parser.add_argument('--domain',       help='Domain for lookups',  default="")
     parser.add_argument('--fingerprints', help='Use certificate pinning with fingerprints', default='always', choices=['always', 'on-problems', 'never'])
     parser.add_argument('--mxresolver',   help='Nameserver for MX and TLSA lookups',  default="")
     parser.add_argument('--txtresolver',  help='Nameserver for TXT lookups', default="")
+    parser.add_argument('--trusted',      help='Name of trusted root store', default="system")
     parser.add_argument('--maxage',       help='Maximum age of TXT records in seconds', type=int)
-    parser.add_argument('--dane',         help='Enforce DANE if TLSA records exists', default='true', choices=['true','false'])
+    parser.add_argument('--dane',         help='Use DANE if TLSA records exists', default='true', choices=['true','false'])
     args = parser.parse_args()
 
     # Set options
     TlsPolicyHandler.tlsPolicy = TlsPolicyMap(
       domain      = args.domain,
-      pinning     = args.pinning,
+      pinning     = args.fingerprints,
       mxResolver  = args.mxresolver,
       txtResolver = args.txtresolver,
+      trusted     = args.trusted,
       maxage      = args.maxage,
       dane        = args.dane=="true",
     )
