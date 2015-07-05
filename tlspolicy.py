@@ -461,19 +461,19 @@ class TlsPolicyMap(Handler):
     return self.time if self.time != None else time.time()
 
 
-  def map(self, txt_records):
+  def map(self, txt_records, dane = False):
       # Ignore empty txt records (unreachable hosts)
       txt_records  = filter(None, txt_records)
       notBefore    = (self.now() - self.maxage) if self.maxage != None else None
       fingerprints = set()
       ciphers      = set()
+      options      = []
       errors       = False
       outdated     = False
-      options      = []
       max_version  = None
       policy       = None
 
-      # Always return 'may' if none are reachable
+      # Always return default policy if none are reachable
       if len(txt_records) == 0:
           return self.DEFAULT_POLICY
 
@@ -524,8 +524,10 @@ class TlsPolicyMap(Handler):
       if max_version != None and max_version in self.TLS_VERSIONS:
           options.append(" protocols=" + self.TLS_VERSIONS[max_version])
 
-      # Enable certificate pining
-      if (self.pinning=='always' or (errors and self.pinning=='on-errors')) and len(fingerprints) > 0:
+      if dane:
+          policy = "dane-only"
+      elif (self.pinning=='always' or (errors and self.pinning=='on-errors')) and len(fingerprints) > 0:
+          # Enable certificate pining
           options.extend("".join([" match=" + ":".join(re.findall("..",fp)) for fp in fingerprints]))
           policy = "fingerprint"
       elif errors:
@@ -540,6 +542,7 @@ class TlsPolicyMap(Handler):
       try:
           # Query MX records
           mx_records  = self.mxResolver.query(nexthop,'MX')
+          dane        = False
           txt_records = []
 
           # Query TXT records for the MX records
@@ -548,7 +551,7 @@ class TlsPolicyMap(Handler):
                   try:
                       # Check for TLSA mx_records
                       self.mxResolver.query('_25._tcp.' + str(mx.exchange), 'TLSA')
-                      return "dane-only"
+                      dane = True
                   except dns.resolver.NXDOMAIN:
                       None
 
@@ -557,20 +560,20 @@ class TlsPolicyMap(Handler):
               txt_records.append("".join(answers[0].strings))
 
           # Map TXT records to TLS policy
-          return self.map(txt_records)
+          return self.map(txt_records, dane=dane)
 
       # In case of other results than "OK" postfix does a second
       # lookup for the parent domain.
       # i.e. example.com leads to a seconds lookup for .com
       # This can be avoided by returning "OK"
       except dns.exception.Timeout:
-          return "may"
+          return self.DEFAULT_POLICY
       except dns.resolver.NoNameservers:
-          return "may"
+          return self.DEFAULT_POLICY
       except dns.resolver.NXDOMAIN:
-          return "may"
+          return self.DEFAULT_POLICY
       except dns.resolver.NoAnswer:
-          return "may"
+          return self.DEFAULT_POLICY
 
 
 if __name__ == "__main__":

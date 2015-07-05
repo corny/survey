@@ -32,6 +32,15 @@ class TestMap(unittest2.TestCase):
         self.assertEqual(policyMap.map(["starttls=true trusted=foo,system"]), 'verify')
         self.assertEqual(policyMap.map(["starttls=true trusted=foo"]), 'encrypt')
 
+    def test_dane(self):
+        policyMap = TlsPolicyMap()
+        self.assertEqual(policyMap.map(["starttls=true tls-versions=0303 fingerprint=abcd","starttls=false"], dane=True),
+            'may')
+        self.assertEqual(policyMap.map(["starttls=true"], dane=True),
+            'dane-only')
+        self.assertEqual(policyMap.map(["starttls=true tls-versions=0303 fingerprint=abcd certificate-problems=expired"], dane=True),
+            'dane-only protocols=TLSv1.2')
+
 
     def test_timestamp(self):
         policyMap = TlsPolicyMap(maxage=50, time=100)
@@ -89,6 +98,7 @@ class TestMap(unittest2.TestCase):
         self.assertEqual(self.map(["starttls=true certificate-problems=mismatch fingerprint=abcd"]), 'encrypt')
 
 
+# does only work with running policy server
 #class TestResolve(unittest2.TestCase):
 #
 #    def resolve_and_map(self,txt):
