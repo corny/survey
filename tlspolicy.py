@@ -114,6 +114,7 @@ class TlsPolicyHandler(Handler):
 class TlsPolicyMap(Handler):
 
   DEFAULT_POLICY = "may"
+  TLS_VERSIONS = {769:"TLSv1.0,TLSv1.1,TLSv1.2", 770:"TLSv1.1,TLSv1.2", 771:"TLSv1.2"}
 
   def __init__(self, domain=None, mxResolver=None, txtResolver=None, pinning='never', maxage=None, dane=True):
     self.domain      = domain
@@ -132,8 +133,11 @@ class TlsPolicyMap(Handler):
       # Ignore empty txt records (unreachable hosts)
       txt_records  = filter(None, txt_records)
       notBefore    = (time.time() - self.maxage) if self.maxage != None else None
-      fingerprints = []
-      errors       = []
+      fingerprints = set()
+      errors       = False
+      options      = []
+      max_version  = None
+      policy       = None
 
       # Always return 'may' if none are reachable
       if len(txt_records) == 0:
@@ -152,19 +156,32 @@ class TlsPolicyMap(Handler):
 
         # Add fingerprint to list
         if "fingerprint" in data:
-            fingerprints.extend(data["fingerprint"].split(","))
+            for fp in data["fingerprint"].split(","):
+                fingerprints.add(fp)
 
-        # TODO respect all records
+        # Add fingerprint to list
+        if "tls-versions" in data:
+            version = max([int(v,16) for v in data["tls-versions"].split(",")])
+            if max_version == None or version < max_version:
+                max_version = version
+
         if "certificate-problems" in data:
             errors = True
 
-      if (self.pinning=='always' or (errors and self.pinning=='on-errors')) and len(fingerprints) > 0:
-        return "fingerprint " + " ".join(["match=" + ":".join(re.findall("..",fp)) for fp in fingerprints])
+      # Set allowed TLS protocol versions
+      if max_version != None and max_version in self.TLS_VERSIONS:
+          options.append(" protocols=" + self.TLS_VERSIONS[max_version])
 
-      if errors:
-        return "encrypt"
+      # Enable certificate pining
+      if (self.pinning=='always' or (errors and self.pinning=='on-errors')) and len(fingerprints) > 0:
+          options.extend("".join([" match=" + ":".join(re.findall("..",fp)) for fp in fingerprints]))
+          policy = "fingerprint"
+      elif errors:
+          policy = "encrypt"
       else:
-        return "verify"
+          policy = "verify"
+
+      return policy + "".join(options)
 
 
   def resolve_and_map(self, nexthop):
@@ -178,7 +195,7 @@ class TlsPolicyMap(Handler):
               if self.dane:
                   try:
                       # Check for TLSA mx_records
-                      self.mxResolver.query('_25._tcp.' + mx.exchange, 'TLSA')
+                      self.mxResolver.query('_25._tcp.' + str(mx.exchange), 'TLSA')
                       return "dane-only"
                   except dns.resolver.NXDOMAIN:
                       None
@@ -211,7 +228,7 @@ if __name__ == "__main__":
     parser.add_argument('--domain',       help='Domain for lookups',  default="tls-scan.informatik.uni-bremen.de")
     parser.add_argument('--fingerprints', help='Use certificate pinning with fingerprints', default='always', choices=['always', 'on-problems', 'never'])
     parser.add_argument('--mxresolver',   help='Nameserver for MX and TLSA lookups',  default="")
-    parser.add_argument('--txtresolver',  help='Nameserver for TXT lookups', default="134.102.201.91")
+    parser.add_argument('--txtresolver',  help='Nameserver for TXT lookups', default="")
     parser.add_argument('--maxage',       help='Maximum age of TXT records in seconds', type=int)
     parser.add_argument('--dane',         help='Enforce DANE if TLSA records exists', default='true', choices=['true','false'])
     args = parser.parse_args()
