@@ -47,6 +47,16 @@ class TestMap(unittest2.TestCase):
         self.assertEqual(policyMap.map(["starttls=true tls-versions=0301,0303"]), 'verify protocols=TLSv1.2')
 
 
+    def test_tls_ciphers(self):
+        policyMap = TlsPolicyMap()
+        # ECDHE_RSA_WITH_AES_128_CBC_SHA
+        self.assertEqual(policyMap.map(["starttls=true tls-ciphers=c013"]), 'verify exclude=aNULL:eNULL:RC4:EXP:SEED:DES:3DES:CAMELLIA')
+
+        # ECDHE_RSA_WITH_RC4_128_SHA
+        # ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        self.assertEqual(policyMap.map(["starttls=true tls-ciphers=c011,c02f"]), 'verify exclude=aNULL:eNULL:EXP:SEED:DES:3DES:CAMELLIA')
+
+
     def test_pinning_on_errors(self):
         policyMap = TlsPolicyMap(pinning='on-errors')
         self.assertEqual(policyMap.map(["starttls=true fingerprint=abcd"]), 'verify')
